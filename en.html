@@ -198,7 +198,8 @@
       border-bottom: 1px solid rgba(255,255,255,0.05);
     }
     nav .logo { font-size: 1.3rem; font-weight: 700; color: #fff; text-decoration: none; }
-    nav .logo { background: linear-gradient(135deg, #667eea, #f093fb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 1.4rem; font-weight: 900; }
+    nav .logo { display: flex; align-items: center; gap: 0.5rem; color: #fff; font-size: 1.4rem; font-weight: 900; text-decoration: none; }
+    .nav-logo { height: 36px; width: auto; border-radius: 6px; }
     nav a { color: rgba(255,255,255,0.7); text-decoration: none; margin-left: 2rem; font-size: 0.95rem; transition: color 0.3s; }
     nav a:hover { color: #fff; }
 
@@ -256,7 +257,7 @@
 <body>
 
 <nav>
-    <a href="index.html" class="logo">Joy n Think</a>
+    <a href="index.html" class="logo"><img src="JnTlogo.jpg" alt="Joy n Think" class="nav-logo"> Joy n Think</a>
   <div>
     <a href="#about">About</a>
     <a href="#strength">Why Us</a>
