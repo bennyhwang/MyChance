@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>後台管理 - 佳思教育</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans SC', -apple-system, sans-serif; color: #1a1a2e; background: #f8f9ff; }
+    nav {
+      background: rgba(15,12,41,0.95);
+      backdrop-filter: blur(20px);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    nav .logo { display: flex; align-items: center; gap: 0.5rem; color: #fff; font-size: 1.4rem; font-weight: 900; text-decoration: none; }
+    nav .nav-right { display: flex; align-items: center; gap: 1rem; }
+    nav .nav-right span { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
+    .logout-btn {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-family: inherit;
+      transition: all 0.3s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.2); }
+
+    .page-content { padding: 6rem 2rem 3rem; max-width: 1400px; margin: 0 auto; }
+    .page-content h1 { font-size: 1.8rem; margin-bottom: 0.3rem; }
+    .page-content .subtitle { color: #6b7280; margin-bottom: 2rem; font-size: 0.95rem; }
+    .stats-bar { display: flex; gap: 1.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .stat-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 1.2rem 2rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      text-align: center;
+      flex: 1;
+      min-width: 120px;
+    }
+    .stat-card .num { font-size: 2rem; font-weight: 900; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .stat-card .label { color: #6b7280; font-size: 0.85rem; margin-top: 0.2rem; }
+
+    .filter-bar { display: flex; gap: 0.8rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; }
+    .filter-bar input, .filter-bar select {
+      padding: 0.5rem 0.8rem;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+    }
+    .filter-bar input:focus, .filter-bar select:focus { border-color: #667eea; }
+
+    .table-wrap {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      overflow-x: auto;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th {
+      background: #f9fafb;
+      text-align: left;
+      padding: 0.9rem 1rem;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 2px solid #e5e7eb;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+    th:hover { background: #f3f4f6; }
+    td {
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid #f3f4f6;
+      color: #4a4a6a;
+    }
+    tr:hover td { background: #f8f9ff; }
+    .level-badge {
+      display: inline-block;
+      padding: 0.15rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .level-good { background: #d1fae5; color: #065f46; }
+    .level-average { background: #fef3c7; color: #92400e; }
+    .level-poor { background: #fee2e2; color: #991b1b; }
+    .empty { text-align: center; padding: 4rem 2rem; color: #9ca3af; }
+    .empty .icon { font-size: 3rem; margin-bottom: 1rem; }
+
+    .login-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, #f8f9ff, #f0f0ff);
+    }
+    .login-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 3rem;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 4px 40px rgba(0,0,0,0.06);
+    }
+    .login-card h1 { font-size: 1.6rem; margin-bottom: 0.3rem; text-align: center; }
+    .login-card .sub { color: #6b7280; margin-bottom: 2rem; text-align: center; font-size: 0.9rem; }
+    .login-card .form-group { margin-bottom: 1.2rem; }
+    .login-card .form-group label { display: block; font-size: 0.9rem; font-weight: 500; color: #374151; margin-bottom: 0.3rem; }
+    .login-card .form-group input {
+      width: 100%; padding: 0.75rem 1rem;
+      border: 1.5px solid #e5e7eb; border-radius: 12px;
+      font-size: 1rem; font-family: inherit;
+      outline: none; transition: border-color 0.3s;
+    }
+    .login-card .form-group input:focus { border-color: #667eea; }
+    .login-btn {
+      width: 100%; padding: 0.85rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff; border: none; border-radius: 12px;
+      font-size: 1rem; font-weight: 500; cursor: pointer;
+      font-family: inherit; transition: all 0.3s;
+    }
+    .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102,126,234,0.4); }
+    .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .login-error { color: #f5576c; font-size: 0.85rem; margin-top: 0.8rem; text-align: center; display: none; }
+
+    .nav-logo { height: 36px; width: auto; border-radius: 6px; }
+
+    @media (max-width: 768px) {
+      .page-content { padding: 5rem 1rem 2rem; }
+      .filter-bar { flex-direction: column; }
+      .filter-bar input, .filter-bar select { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<nav id="navBar" style="display:none;">
+  <a href="index.html" class="logo"><img src="JnTlogo.jpg" alt="佳思教育" class="nav-logo"> 佳思教育</a>
+  <div class="nav-right">
+    <span id="userEmail"></span>
+    <button class="logout-btn" onclick="logout()">登出</button>
+  </div>
+</nav>
+
+<div id="loginPage" class="login-page">
+  <div class="login-card">
+    <h1>後台管理</h1>
+    <p class="sub">請使用管理員賬號登錄</p>
+    <div class="form-group">
+      <label>郵箱</label>
+      <input type="email" id="loginEmail" placeholder="admin@email.com">
+    </div>
+    <div class="form-group">
+      <label>密碼</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="login()">登錄</button>
+    <div class="login-error" id="loginError">郵箱或密碼錯誤</div>
+  </div>
+</div>
+
+<div id="adminPage" style="display:none;">
+  <div class="page-content">
+    <h1>咨詢記錄</h1>
+    <p class="subtitle">查看所有客戶提交的咨詢表</p>
+
+    <div class="stats-bar" id="statsBar"></div>
+
+    <div class="filter-bar">
+      <input type="text" id="searchInput" placeholder="搜索姓名 / 手機 / 學校..." oninput="renderTable()">
+      <select id="levelFilter" onchange="renderTable()">
+        <option value="">全部成績</option>
+        <option value="good">好</option>
+        <option value="average">中</option>
+        <option value="poor">差</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('id')">ID</th>
+            <th onclick="sortBy('parent_name')">家長姓名</th>
+            <th onclick="sortBy('phone')">手機</th>
+            <th onclick="sortBy('email')">郵箱</th>
+            <th onclick="sortBy('child_age')">小孩年齡</th>
+            <th onclick="sortBy('school')">學校</th>
+            <th onclick="sortBy('grade')">年級</th>
+            <th onclick="sortBy('academic_level')">成績</th>
+            <th onclick="sortBy('expectation')">希望</th>
+            <th onclick="sortBy('created_at')">提交時間</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="10" class="empty">
+            <div class="icon">📋</div>
+            <div>暫無數據</div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://fuuwjceawowojecaqfru.supabase.co'
+  const SUPABASE_KEY = 'sb_publishable_M3lmOrr1QDDkkKE3r9q7qQ_mVnLlYtQ'
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+
+  let allData = []
+  let sortField = 'created_at'
+  let sortDir = 'desc'
+  let currentUser = null
+
+  async function login() {
+    const email = document.getElementById('loginEmail').value.trim()
+    const password = document.getElementById('loginPassword').value
+    const btn = document.getElementById('loginBtn')
+    const errEl = document.getElementById('loginError')
+    errEl.style.display = 'none'
+    if (!email || !password) { errEl.textContent = '請輸入郵箱和密碼'; errEl.style.display = 'block'; return }
+    btn.disabled = true; btn.textContent = '登錄中...'
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (error) {
+      errEl.textContent = '郵箱或密碼錯誤'; errEl.style.display = 'block'
+      btn.disabled = false; btn.textContent = '登錄'
+      return
+    }
+
+    currentUser = data.user
+    showAdmin()
+  }
+
+  async function logout() {
+    await supabase.auth.signOut()
+    currentUser = null
+    document.getElementById('adminPage').style.display = 'none'
+    document.getElementById('navBar').style.display = 'none'
+    document.getElementById('loginPage').style.display = 'flex'
+  }
+
+  async function showAdmin() {
+    document.getElementById('loginPage').style.display = 'none'
+    document.getElementById('navBar').style.display = 'flex'
+    document.getElementById('userEmail').textContent = currentUser.email
+    document.getElementById('adminPage').style.display = 'block'
+    await loadData()
+  }
+
+  async function loadData() {
+    const { data, error } = await supabase
+      .from('inquiries')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) { alert('載入失敗：' + error.message); return }
+    allData = data || []
+    renderTable()
+    renderStats()
+  }
+
+  function renderStats() {
+    const bar = document.getElementById('statsBar')
+    bar.innerHTML = `
+      <div class="stat-card"><div class="num">${allData.length}</div><div class="label">總記錄</div></div>
+      <div class="stat-card"><div class="num">${allData.filter(d => d.academic_level === 'good').length}</div><div class="label">成績好</div></div>
+      <div class="stat-card"><div class="num">${allData.filter(d => d.academic_level === 'average').length}</div><div class="label">成績中</div></div>
+      <div class="stat-card"><div class="num">${allData.filter(d => d.academic_level === 'poor').length}</div><div class="label">成績差</div></div>
+    `
+  }
+
+  function sortBy(field) {
+    if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc'
+    else { sortField = field; sortDir = 'asc' }
+    renderTable()
+  }
+
+  function renderTable() {
+    const q = document.getElementById('searchInput').value.toLowerCase()
+    const lv = document.getElementById('levelFilter').value
+    let filtered = allData.filter(d => {
+      if (lv && d.academic_level !== lv) return false
+      if (q) {
+        const s = (d.parent_name + d.phone + d.school + (d.email || '') + d.grade + d.parent_name).toLowerCase()
+        if (!s.includes(q)) return false
+      }
+      return true
+    })
+
+    filtered.sort((a, b) => {
+      let va = a[sortField], vb = b[sortField]
+      if (sortField === 'id') va = Number(va); vb = Number(vb)
+      if (va == null) va = ''; if (vb == null) vb = ''
+      if (typeof va === 'string') va = va.toLowerCase(); if (typeof vb === 'string') vb = vb.toLowerCase()
+      if (va < vb) return sortDir === 'asc' ? -1 : 1
+      if (va > vb) return sortDir === 'asc' ? 1 : -1
+      return 0
+    })
+
+    const levelMap = { good: '好', average: '中', poor: '差' }
+    const levelClass = { good: 'level-good', average: 'level-average', poor: 'level-poor' }
+
+    const tbody = document.getElementById('tableBody')
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" class="empty"><div class="icon">📋</div><div>暫無匹配記錄</div></td></tr>'
+      return
+    }
+
+    tbody.innerHTML = filtered.map(d => `
+      <tr>
+        <td>${d.id}</td>
+        <td>${d.parent_name}</td>
+        <td>${d.phone}</td>
+        <td>${d.email || '-'}</td>
+        <td>${d.child_age || '-'}</td>
+        <td>${d.school || '-'}</td>
+        <td>${d.grade || '-'}</td>
+        <td><span class="level-badge ${levelClass[d.academic_level]}">${levelMap[d.academic_level] || d.academic_level}</span></td>
+        <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(d.expectation||'').replace(/"/g,'&quot;')}">${d.expectation || '-'}</td>
+        <td style="white-space:nowrap;">${new Date(d.created_at).toLocaleString('zh-HK')}</td>
+      </tr>
+    `).join('')
+  }
+
+  async function checkSession() {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session) {
+      currentUser = session.user
+      showAdmin()
+    }
+  }
+
+  checkSession()
+</script>
+
+</body>
+</html>
