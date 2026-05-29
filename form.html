@@ -186,7 +186,7 @@
 <script>
   const SUPABASE_URL = 'https://fuuwjceawowojecaqfru.supabase.co'
   const SUPABASE_KEY = 'sb_publishable_M3lmOrr1QDDkkKE3r9q7qQ_mVnLlYtQ'
-  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
 
   document.getElementById('consultForm').addEventListener('submit', async (e) => {
     e.preventDefault()
