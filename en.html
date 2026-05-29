@@ -150,6 +150,14 @@
     .about-text p { color: #4a4a6a; line-height: 2; margin-bottom: 1rem; font-size: 1.05rem; overflow-wrap: break-word; word-break: break-word; }
     .about-poster { text-align: right; }
     .about-poster img { width: 90%; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); display: inline-block; }
+    .philosophy-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+    .philosophy-poster img { width: 100%; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+    .philosophy-right .section-title, .philosophy-right .section-desc { text-align: center; }
     .stats {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -240,6 +248,7 @@
 
     @media (max-width: 768px) {
       .about-content { grid-template-columns: 1fr; gap: 1.5rem; }
+      .philosophy-content { grid-template-columns: 1fr; gap: 1.5rem; }
       .stats { grid-template-columns: repeat(3, 1fr); gap: 0.8rem; }
       .stat-item { padding: 1rem; }
       .stat-item .num { font-size: 1.8rem; }
@@ -350,9 +359,14 @@
 
 <section id="philosophy" style="background: #f8f9ff;">
   <div class="container">
-    <div class="section-title">Our Teaching Philosophy</div>
-    <div class="section-desc">Six core principles woven into every lesson</div>
-    <div class="philosophy-list">
+    <div class="philosophy-content">
+      <div class="philosophy-poster">
+        <img src="poster02.png" alt="Joy n Think">
+      </div>
+      <div class="philosophy-right">
+        <div class="section-title">Our Teaching Philosophy</div>
+        <div class="section-desc">Six core principles woven into every lesson</div>
+        <div class="philosophy-list">
       <div class="philo-item">
         <div class="num">01</div>
         <div>
@@ -394,6 +408,8 @@
           <h4>Home-School Partnership</h4>
           <p>Education is not just the school's job. We maintain open communication with parents, providing regular progress updates and working together for every child's growth.</p>
         </div>
+      </div>
+    </div>
       </div>
     </div>
   </div>
