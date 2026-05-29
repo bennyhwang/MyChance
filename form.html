@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>咨詢登記 - 佳思教育</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Noto Sans SC', -apple-system, sans-serif; color: #1a1a2e; background: #f8f9ff; }
@@ -187,7 +186,6 @@
 <script>
   const SUPABASE_URL = 'https://fuuwjceawowojecaqfru.supabase.co'
   const SUPABASE_KEY = 'sb_publishable_M3lmOrr1QDDkkKE3r9q7qQ_mVnLlYtQ'
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
 
   document.getElementById('consultForm').addEventListener('submit', async (e) => {
     e.preventDefault()
@@ -195,7 +193,7 @@
     btn.disabled = true
     btn.textContent = '提交中...'
 
-    const data = {
+    const payload = {
       parent_name: document.getElementById('parent_name').value.trim(),
       parent_age: parseInt(document.getElementById('parent_age').value) || null,
       phone: document.getElementById('phone').value.trim(),
@@ -207,26 +205,35 @@
       expectation: document.getElementById('expectation').value.trim() || null,
     }
 
-    const { error } = await supabase.from('inquiries').insert(data)
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/inquiries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+        },
+        body: JSON.stringify(payload),
+      })
 
-    if (error) {
-      alert('提交失敗，請稍後重試：' + error.message)
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+
+      document.getElementById('overlay').classList.add('show')
+      let sec = 3
+      document.getElementById('countdown').textContent = sec
+      const timer = setInterval(() => {
+        sec--
+        document.getElementById('countdown').textContent = sec
+        if (sec <= 0) {
+          clearInterval(timer)
+          window.location.href = 'index.html'
+        }
+      }, 1000)
+    } catch (err) {
+      alert('提交失敗，請稍後重試：' + err.message)
       btn.disabled = false
       btn.textContent = '提交咨詢'
-      return
     }
-
-    document.getElementById('overlay').classList.add('show')
-    let sec = 3
-    document.getElementById('countdown').textContent = sec
-    const timer = setInterval(() => {
-      sec--
-      document.getElementById('countdown').textContent = sec
-      if (sec <= 0) {
-        clearInterval(timer)
-        window.location.href = 'index.html'
-      }
-    }, 1000)
   })
 </script>
 
