@@ -310,6 +310,7 @@
       <button class="tab-btn" onclick="switchTab('teachers')">老師管理</button>
       <button class="tab-btn" onclick="switchTab('students')">學生管理</button>
       <button class="tab-btn" onclick="switchTab('courses')">課程管理</button>
+      <button class="tab-btn" onclick="switchTab('registrations')">註冊管理</button>
     </div>
 
     <!-- 咨詢記錄視圖 -->
@@ -408,7 +409,6 @@
               <th>年齡</th>
               <th>就讀學校</th>
               <th>年級</th>
-              <th>報名課程</th>
               <th>開始時間</th>
               <th>家長手機</th>
               <th>家長郵箱</th>
@@ -416,7 +416,7 @@
             </tr>
           </thead>
           <tbody id="studentBody">
-            <tr><td colspan="11" class="empty"><div class="icon">🎒</div><div>暫無學生，點擊右上角新增</div></td></tr>
+            <tr><td colspan="10" class="empty"><div class="icon">🎒</div><div>暫無學生，點擊右上角新增</div></td></tr>
           </tbody>
         </table>
       </div>
@@ -452,6 +452,35 @@
             <tr><td colspan="10" class="empty"><div class="icon">📖</div><div>暫無課程，點擊右上角新增</div></td></tr>
           </tbody>
         </table>
+    </div>
+  </div>
+
+    <!-- 註冊管理視圖 -->
+    <div id="registrationsView" class="view">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <div>
+          <h1 style="font-size:1.8rem;margin-bottom:0.3rem;">註冊管理</h1>
+          <p style="color:#6b7280;font-size:0.95rem;">登記學生報名課程的情況</p>
+        </div>
+        <button class="add-btn" onclick="openAddRegistration()">+ 新增註冊</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>學生姓名</th>
+              <th>課程名稱</th>
+              <th>付費金額</th>
+              <th>付費單號</th>
+              <th>已發教材</th>
+              <th>登記時間</th>
+              <th style="cursor:default;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="registrationBody">
+            <tr><td colspan="7" class="empty"><div class="icon">📝</div><div>暫無註冊記錄，點擊右上角新增</div></td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -471,7 +500,7 @@
   </div>
 </div>
 
-<!-- 新增老師彈窗 -->
+<!-- 回訪彈窗 -->
 <div class="modal-overlay" id="teacherModal">
   <div class="modal-box" style="max-width:580px;">
     <h3>新增老師</h3>
@@ -582,10 +611,6 @@
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>報名課程</label>
-        <input type="text" id="s_course" placeholder="如：數學精英班">
-      </div>
-      <div class="form-group">
         <label>開始時間</label>
         <input type="text" id="s_start_date" placeholder="如：2026-06">
       </div>
@@ -669,6 +694,47 @@
   </div>
 </div>
 
+<!-- 新增註冊彈窗 -->
+<div class="modal-overlay" id="registrationModal">
+  <div class="modal-box" style="max-width:520px;">
+    <h3>新增註冊</h3>
+    <p class="modal-sub">登記學生報名課程</p>
+    <div class="form-group">
+      <label>學生 <span class="req">*</span></label>
+      <select id="r_student" required>
+        <option value="">請選擇學生</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>課程 <span class="req">*</span></label>
+      <select id="r_course" required>
+        <option value="">請選擇課程</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>付費金額</label>
+        <input type="text" id="r_fee" placeholder="如：HKD 3600">
+      </div>
+      <div class="form-group">
+        <label>付費單號</label>
+        <input type="text" id="r_payment_ref" placeholder="如：PAY20260601">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>是否已發教材</label>
+      <select id="r_materials">
+        <option value="false">否</option>
+        <option value="true">是</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAddRegistration()">放棄</button>
+      <button class="btn-save" id="saveRegistrationBtn" onclick="saveRegistration()">確認保存</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const SUPABASE_URL = 'https://fuuwjceawowojecaqfru.supabase.co'
   const SUPABASE_KEY = 'sb_publishable_M3lmOrr1QDDkkKE3r9q7qQ_mVnLlYtQ'
@@ -677,6 +743,7 @@
   let allTeachers = []
   let allStudents = []
   let allCourses = []
+  let allRegistrations = []
   let sortField = 'created_at'
   let sortDir = 'desc'
   let accessToken = null
@@ -704,7 +771,7 @@
       document.getElementById('loginPage').style.display = 'none'
       document.getElementById('navBar').style.display = 'flex'
       document.getElementById('adminPage').style.display = 'block'
-      await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses()])
+      await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses(), loadRegistrations()])
     } catch (_) {
       const errEl = document.getElementById('loginError')
       errEl.style.display = 'block'
@@ -723,7 +790,7 @@
   function switchTab(name) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
-    const tabs = { inquiries: 0, teachers: 1, students: 2, courses: 3 }
+    const tabs = { inquiries: 0, teachers: 1, students: 2, courses: 3, registrations: 4 }
     document.querySelectorAll('.tab-btn')[tabs[name]].classList.add('active')
     document.getElementById(name + 'View').classList.add('active')
   }
@@ -954,7 +1021,7 @@
   function renderStudents() {
     const tbody = document.getElementById('studentBody')
     if (allStudents.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="11" class="empty"><div class="icon">🎒</div><div>暫無學生，點擊右上角新增</div></td></tr>'
+      tbody.innerHTML = '<tr><td colspan="10" class="empty"><div class="icon">🎒</div><div>暫無學生，點擊右上角新增</div></td></tr>'
       return
     }
     tbody.innerHTML = allStudents.map(s => `
@@ -965,7 +1032,6 @@
         <td>${s.age || '-'}</td>
         <td>${s.school || '-'}</td>
         <td>${s.grade || '-'}</td>
-        <td>${s.course || '-'}</td>
         <td>${s.start_date || '-'}</td>
         <td>${s.parent_phone || '-'}</td>
         <td>${s.parent_email || '-'}</td>
@@ -975,7 +1041,7 @@
   }
 
   function openAddStudent() {
-    ['s_name','s_english_name','s_gender','s_age','s_school','s_grade','s_course','s_start_date','s_parent_phone','s_parent_email'].forEach(id => {
+    ['s_name','s_english_name','s_gender','s_age','s_school','s_grade','s_start_date','s_parent_phone','s_parent_email'].forEach(id => {
       const el = document.getElementById(id)
       if (el.tagName === 'SELECT') el.selectedIndex = 0
       else el.value = ''
@@ -1000,7 +1066,6 @@
       age: parseInt(document.getElementById('s_age').value) || null,
       school: document.getElementById('s_school').value.trim() || null,
       grade: document.getElementById('s_grade').value.trim() || null,
-      course: document.getElementById('s_course').value.trim() || null,
       start_date: document.getElementById('s_start_date').value.trim() || null,
       parent_phone: document.getElementById('s_parent_phone').value.trim() || null,
       parent_email: document.getElementById('s_parent_email').value.trim() || null,
@@ -1123,6 +1188,101 @@
     } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('刪除失敗：' + err.message) }
   }
 
+  // ============ 註冊管理 ============
+
+  async function loadRegistrations() {
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/registrations?order=created_at.desc', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+      })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      allRegistrations = await res.json()
+      renderRegistrations()
+    } catch (err) { alert('載入註冊記錄失敗：' + err.message) }
+  }
+
+  function renderRegistrations() {
+    const tbody = document.getElementById('registrationBody')
+    if (allRegistrations.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty"><div class="icon">📝</div><div>暫無註冊記錄，點擊右上角新增</div></td></tr>'
+      return
+    }
+    tbody.innerHTML = allRegistrations.map(r => `
+      <tr>
+        <td>${r.student_name}</td>
+        <td>${r.course_name}</td>
+        <td>${r.fee || '-'}</td>
+        <td>${r.payment_ref || '-'}</td>
+        <td>${r.materials_delivered ? '是' : '否'}</td>
+        <td style="white-space:nowrap;">${new Date(r.created_at).toLocaleString('zh-HK')}</td>
+        <td style="text-align:center;"><span class="del-icon" onclick="deleteRegistration(${r.id})" title="刪除" style="color:#f5576c;">🗑️</span></td>
+      </tr>
+    `).join('')
+  }
+
+  function openAddRegistration() {
+    // Populate student dropdown
+    const sSel = document.getElementById('r_student')
+    sSel.innerHTML = '<option value="">請選擇學生</option>'
+    allStudents.forEach(s => {
+      sSel.innerHTML += '<option value="' + s.name.replace(/"/g,'&quot;') + '">' + s.name + '</option>'
+    })
+    // Populate course dropdown
+    const cSel = document.getElementById('r_course')
+    cSel.innerHTML = '<option value="">請選擇課程</option>'
+    allCourses.forEach(c => {
+      cSel.innerHTML += '<option value="' + c.course_name.replace(/"/g,'&quot;') + '">' + c.course_name + '</option>'
+    })
+    // Reset other fields
+    document.getElementById('r_fee').value = ''
+    document.getElementById('r_payment_ref').value = ''
+    document.getElementById('r_materials').selectedIndex = 0
+    document.getElementById('registrationModal').classList.add('show')
+    setTimeout(() => sSel.focus(), 100)
+  }
+
+  function closeAddRegistration() {
+    document.getElementById('registrationModal').classList.remove('show')
+  }
+
+  async function saveRegistration() {
+    const student = document.getElementById('r_student').value
+    const course = document.getElementById('r_course').value
+    if (!student) { alert('請選擇學生'); return }
+    if (!course) { alert('請選擇課程'); return }
+    const btn = document.getElementById('saveRegistrationBtn')
+    btn.disabled = true; btn.textContent = '保存中...'
+    const payload = {
+      student_name: student,
+      course_name: course,
+      fee: document.getElementById('r_fee').value.trim() || null,
+      payment_ref: document.getElementById('r_payment_ref').value.trim() || null,
+      materials_delivered: document.getElementById('r_materials').value === 'true',
+    }
+    try {
+      await apiFetch(SUPABASE_URL + '/rest/v1/registrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+        body: JSON.stringify(payload),
+      })
+      closeAddRegistration()
+      await loadRegistrations()
+    } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('保存失敗：' + err.message) }
+    btn.disabled = false; btn.textContent = '確認保存'
+  }
+
+  async function deleteRegistration(id) {
+    if (!confirm('確定要刪除這條註冊記錄嗎？')) return
+    try {
+      await apiFetch(SUPABASE_URL + '/rest/v1/registrations?id=eq.' + id, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+      })
+      allRegistrations = allRegistrations.filter(r => r.id !== id)
+      renderRegistrations()
+    } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('刪除失敗：' + err.message) }
+  }
+
   function isTokenExpired(session) {
     if (!session.expires_at) return false
     return Date.now() / 1000 > session.expires_at
@@ -1142,7 +1302,7 @@
       document.getElementById('loginPage').style.display = 'none'
       document.getElementById('navBar').style.display = 'flex'
       document.getElementById('adminPage').style.display = 'block'
-      await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses()])
+      await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses(), loadRegistrations()])
     } catch (_) { localStorage.removeItem('supabase_session') }
   }
 
