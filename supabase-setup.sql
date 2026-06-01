@@ -26,3 +26,12 @@ CREATE POLICY "auth_can_select" ON inquiries
   FOR SELECT
   TO authenticated
   USING (true);
+
+CREATE POLICY "auth_can_update" ON inquiries
+  FOR UPDATE
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
+
+-- 如果你已经运行过上面的建表语句，只需运行下面这行添加回访列：
+-- ALTER TABLE inquiries ADD COLUMN follow_up TEXT;
