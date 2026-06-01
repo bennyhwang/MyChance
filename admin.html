@@ -722,14 +722,12 @@
     try {
       const res = await fetch(SUPABASE_URL + '/rest/v1/teachers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken, 'Prefer': 'return=representation' },
         body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error('HTTP ' + res.status)
-      const newTeacher = await res.json()
-      allTeachers.unshift(newTeacher)
       closeAddTeacher()
-      renderTeachers()
+      await loadTeachers()
     } catch (err) { alert('保存失敗：' + err.message) }
     btn.disabled = false; btn.textContent = '確認保存'
   }
