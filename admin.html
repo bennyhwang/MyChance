@@ -638,14 +638,20 @@
         <input type="text" id="c_end_date" placeholder="如：2026-09-30">
       </div>
       <div class="form-group">
-        <label>授課老師</label>
-        <input type="text" id="c_teacher" placeholder="如：張志明老師">
+        <label>授課老師 <span class="req">*</span></label>
+        <select id="c_teacher" required>
+          <option value="">請選擇老師</option>
+        </select>
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label>授課教室</label>
-        <input type="text" id="c_classroom" placeholder="如：303室">
+        <label>授課教室 <span class="req">*</span></label>
+        <select id="c_classroom" required>
+          <option value="">請選擇教室</option>
+          <option value="本部B1-301">本部B1-301</option>
+          <option value="本部B1-307">本部B1-307</option>
+        </select>
       </div>
       <div class="form-group">
         <label>課程費用</label>
@@ -1059,8 +1065,15 @@
   }
 
   function openAddCourse() {
-    ['c_course_name','c_description','c_sessions','c_start_date','c_end_date','c_teacher','c_classroom','c_fee','c_materials'].forEach(id => {
-      document.getElementById(id).value = ''
+    const sel = document.getElementById('c_teacher')
+    sel.innerHTML = '<option value="">請選擇老師</option>'
+    allTeachers.forEach(t => {
+      sel.innerHTML += '<option value="' + t.name.replace(/"/g,'&quot;') + '">' + t.name + '</option>'
+    })
+    ;['c_course_name','c_description','c_sessions','c_start_date','c_end_date','c_classroom','c_fee','c_materials'].forEach(id => {
+      const el = document.getElementById(id)
+      if (el.tagName === 'SELECT') el.selectedIndex = 0
+      else el.value = ''
     })
     document.getElementById('courseModal').classList.add('show')
     setTimeout(() => document.getElementById('c_course_name').focus(), 100)
@@ -1081,8 +1094,8 @@
       sessions: parseInt(document.getElementById('c_sessions').value) || null,
       start_date: document.getElementById('c_start_date').value.trim() || null,
       end_date: document.getElementById('c_end_date').value.trim() || null,
-      teacher: document.getElementById('c_teacher').value.trim() || null,
-      classroom: document.getElementById('c_classroom').value.trim() || null,
+      teacher: document.getElementById('c_teacher').value || null,
+      classroom: document.getElementById('c_classroom').value || null,
       fee: document.getElementById('c_fee').value.trim() || null,
       materials: document.getElementById('c_materials').value.trim() || null,
     }
