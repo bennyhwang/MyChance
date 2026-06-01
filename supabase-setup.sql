@@ -46,6 +46,27 @@ CREATE POLICY "auth_insert_students" ON students FOR INSERT TO authenticated WIT
 CREATE POLICY "auth_update_students" ON students FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "auth_delete_students" ON students FOR DELETE TO authenticated USING (true);
 
+CREATE TABLE courses (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  course_name TEXT NOT NULL,
+  description TEXT,
+  sessions INTEGER,
+  start_date TEXT,
+  end_date TEXT,
+  teacher TEXT,
+  classroom TEXT,
+  fee TEXT,
+  materials TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE courses ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "auth_select_courses" ON courses FOR SELECT TO authenticated USING (true);
+CREATE POLICY "auth_insert_courses" ON courses FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "auth_update_courses" ON courses FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "auth_delete_courses" ON courses FOR DELETE TO authenticated USING (true);
+
 CREATE TABLE inquiries (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   parent_name TEXT NOT NULL,

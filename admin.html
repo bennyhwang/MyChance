@@ -309,6 +309,7 @@
       <button class="tab-btn active" onclick="switchTab('inquiries')">咨詢記錄</button>
       <button class="tab-btn" onclick="switchTab('teachers')">老師管理</button>
       <button class="tab-btn" onclick="switchTab('students')">學生管理</button>
+      <button class="tab-btn" onclick="switchTab('courses')">課程管理</button>
     </div>
 
     <!-- 咨詢記錄視圖 -->
@@ -416,6 +417,39 @@
           </thead>
           <tbody id="studentBody">
             <tr><td colspan="11" class="empty"><div class="icon">🎒</div><div>暫無學生，點擊右上角新增</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 課程管理視圖 -->
+    <div id="coursesView" class="view">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <div>
+          <h1 style="font-size:1.8rem;margin-bottom:0.3rem;">課程管理</h1>
+          <p style="color:#6b7280;font-size:0.95rem;">管理所有授課課程信息</p>
+        </div>
+        <button class="add-btn" onclick="openAddCourse()">+ 新增課程</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>課程名稱</th>
+              <th>簡述</th>
+              <th>節數</th>
+              <th>開始時間</th>
+              <th>結束時間</th>
+              <th>授課老師</th>
+              <th>教室</th>
+              <th>費用</th>
+              <th>教材情況</th>
+              <th style="cursor:default;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="courseBody">
+            <tr><td colspan="10" class="empty"><div class="icon">📖</div><div>暫無課程，點擊右上角新增</div></td></tr>
           </tbody>
         </table>
       </div>
@@ -573,6 +607,62 @@
   </div>
 </div>
 
+<!-- 新增課程彈窗 -->
+<div class="modal-overlay" id="courseModal">
+  <div class="modal-box" style="max-width:580px;">
+    <h3>新增課程</h3>
+    <p class="modal-sub">請填寫課程的完整信息</p>
+    <div class="form-row">
+      <div class="form-group">
+        <label>課程名稱 <span class="req">*</span></label>
+        <input type="text" id="c_course_name" placeholder="如：數學精英班">
+      </div>
+      <div class="form-group">
+        <label>課程簡述</label>
+        <input type="text" id="c_description" placeholder="如：針對中二學生的數學強化課程">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>課程節數</label>
+        <input type="number" id="c_sessions" placeholder="如：12">
+      </div>
+      <div class="form-group">
+        <label>開始時間</label>
+        <input type="text" id="c_start_date" placeholder="如：2026-07-01">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>結束時間</label>
+        <input type="text" id="c_end_date" placeholder="如：2026-09-30">
+      </div>
+      <div class="form-group">
+        <label>授課老師</label>
+        <input type="text" id="c_teacher" placeholder="如：張志明老師">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>授課教室</label>
+        <input type="text" id="c_classroom" placeholder="如：303室">
+      </div>
+      <div class="form-group">
+        <label>課程費用</label>
+        <input type="text" id="c_fee" placeholder="如：HKD 3600">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>教材情況</label>
+      <input type="text" id="c_materials" placeholder="如：自編教材，需另行購買">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAddCourse()">放棄</button>
+      <button class="btn-save" id="saveCourseBtn" onclick="saveCourse()">確認保存</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const SUPABASE_URL = 'https://fuuwjceawowojecaqfru.supabase.co'
   const SUPABASE_KEY = 'sb_publishable_M3lmOrr1QDDkkKE3r9q7qQ_mVnLlYtQ'
@@ -580,6 +670,7 @@
   let allData = []
   let allTeachers = []
   let allStudents = []
+  let allCourses = []
   let sortField = 'created_at'
   let sortDir = 'desc'
   let accessToken = null
@@ -607,7 +698,7 @@
       document.getElementById('loginPage').style.display = 'none'
       document.getElementById('navBar').style.display = 'flex'
       document.getElementById('adminPage').style.display = 'block'
-      await Promise.all([loadData(), loadTeachers(), loadStudents()])
+      await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses()])
     } catch (_) {
       const errEl = document.getElementById('loginError')
       errEl.style.display = 'block'
@@ -932,6 +1023,93 @@
     } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('刪除失敗：' + err.message) }
   }
 
+  // ============ 課程管理 ============
+
+  async function loadCourses() {
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/courses?order=created_at.desc', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+      })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      allCourses = await res.json()
+      renderCourses()
+    } catch (err) { alert('載入課程列表失敗：' + err.message) }
+  }
+
+  function renderCourses() {
+    const tbody = document.getElementById('courseBody')
+    if (allCourses.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" class="empty"><div class="icon">📖</div><div>暫無課程，點擊右上角新增</div></td></tr>'
+      return
+    }
+    tbody.innerHTML = allCourses.map(c => `
+      <tr>
+        <td>${c.course_name}</td>
+        <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(c.description||'').replace(/"/g,'&quot;')}">${c.description || '-'}</td>
+        <td>${c.sessions || '-'}</td>
+        <td>${c.start_date || '-'}</td>
+        <td>${c.end_date || '-'}</td>
+        <td>${c.teacher || '-'}</td>
+        <td>${c.classroom || '-'}</td>
+        <td>${c.fee || '-'}</td>
+        <td style="max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(c.materials||'').replace(/"/g,'&quot;')}">${c.materials || '-'}</td>
+        <td style="text-align:center;"><span class="del-icon" onclick="deleteCourse(${c.id})" title="刪除" style="color:#f5576c;">🗑️</span></td>
+      </tr>
+    `).join('')
+  }
+
+  function openAddCourse() {
+    ['c_course_name','c_description','c_sessions','c_start_date','c_end_date','c_teacher','c_classroom','c_fee','c_materials'].forEach(id => {
+      document.getElementById(id).value = ''
+    })
+    document.getElementById('courseModal').classList.add('show')
+    setTimeout(() => document.getElementById('c_course_name').focus(), 100)
+  }
+
+  function closeAddCourse() {
+    document.getElementById('courseModal').classList.remove('show')
+  }
+
+  async function saveCourse() {
+    const name = document.getElementById('c_course_name').value.trim()
+    if (!name) { alert('請輸入課程名稱'); document.getElementById('c_course_name').focus(); return }
+    const btn = document.getElementById('saveCourseBtn')
+    btn.disabled = true; btn.textContent = '保存中...'
+    const payload = {
+      course_name: name,
+      description: document.getElementById('c_description').value.trim() || null,
+      sessions: parseInt(document.getElementById('c_sessions').value) || null,
+      start_date: document.getElementById('c_start_date').value.trim() || null,
+      end_date: document.getElementById('c_end_date').value.trim() || null,
+      teacher: document.getElementById('c_teacher').value.trim() || null,
+      classroom: document.getElementById('c_classroom').value.trim() || null,
+      fee: document.getElementById('c_fee').value.trim() || null,
+      materials: document.getElementById('c_materials').value.trim() || null,
+    }
+    try {
+      await apiFetch(SUPABASE_URL + '/rest/v1/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+        body: JSON.stringify(payload),
+      })
+      closeAddCourse()
+      await loadCourses()
+    } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('保存失敗：' + err.message) }
+    btn.disabled = false; btn.textContent = '確認保存'
+  }
+
+  async function deleteCourse(id) {
+    if (!confirm('確定要刪除這門課程嗎？')) return
+    try {
+      await apiFetch(SUPABASE_URL + '/rest/v1/courses?id=eq.' + id, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+      })
+      allCourses = allCourses.filter(c => c.id !== id)
+      renderCourses()
+    } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('刪除失敗：' + err.message) }
+  }
+
   function isTokenExpired(session) {
     if (!session.expires_at) return false
     return Date.now() / 1000 > session.expires_at
@@ -951,7 +1129,7 @@
       document.getElementById('loginPage').style.display = 'none'
       document.getElementById('navBar').style.display = 'flex'
       document.getElementById('adminPage').style.display = 'block'
-      await Promise.all([loadData(), loadTeachers(), loadStudents()])
+      await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses()])
     } catch (_) { localStorage.removeItem('supabase_session') }
   }
 
