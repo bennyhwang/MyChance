@@ -418,7 +418,7 @@
         <td><span class="level-badge ${lvCls[d.academic_level]}">${lvMap[d.academic_level] || d.academic_level}</span></td>
         <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(d.expectation||'').replace(/"/g,'&quot;')}">${d.expectation || '-'}</td>
         <td style="white-space:nowrap;">${new Date(d.created_at).toLocaleString('zh-HK')}</td>
-        <td style="text-align:center;"><span class="follow-icon" onclick="openFollowUp(${d.id})" title="${hasFollowUp ? d.follow_up : '點擊記錄回訪'}" style="color:${hasFollowUp ? '#38ef7d' : '#d1d5db'};">💬</span></td>
+        <td style="text-align:center;"><span class="follow-icon" onclick="openFollowUp(${d.id})" title="${hasFollowUp ? d.follow_up : '點擊記錄回訪'}" style="color:${hasFollowUp ? '#667eea' : '#d1d5db'};">💬</span></td>
       </tr>`
     }).join('')
   }
