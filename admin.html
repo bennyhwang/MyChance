@@ -514,7 +514,31 @@
 
     <!-- 賬號管理視圖 -->
     <div id="accountsView" class="view">
-      <h1 style="font-size:3rem;text-align:center;padding:4rem;color:#667eea;">现在正常了吗？</h1>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <div>
+          <h1 style="font-size:1.8rem;margin-bottom:0.3rem;">賬號管理</h1>
+          <p style="color:#6b7280;font-size:0.95rem;">管理所有登錄賬號</p>
+        </div>
+        <button class="add-btn" onclick="openAddAccount()">+ 新增賬號</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>用戶名</th>
+              <th>顯示名稱</th>
+              <th>角色</th>
+              <th>關聯對象</th>
+              <th>創建時間</th>
+              <th style="cursor:default;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="accountBody">
+            <tr><td colspan="6" class="empty"><div class="icon">🔑</div><div>暫無賬號，點擊右上角新增</div></td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -772,7 +796,48 @@
   </div>
 </div>
 
-
+<!-- 新增賬號彈窗 -->
+<div class="modal-overlay" id="accountModal">
+  <div class="modal-box" style="max-width:480px;">
+    <h3>新增賬號</h3>
+    <p class="modal-sub">為教务、老師、家長創建登錄賬號</p>
+    <div class="form-group">
+      <label>用戶名 <span class="req">*</span></label>
+      <input type="text" id="a_username" placeholder="如：teacher01（字母+數字）">
+    </div>
+    <div class="form-group">
+      <label>顯示名稱</label>
+      <input type="text" id="a_display_name" placeholder="如：張志明老師">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>角色 <span class="req">*</span></label>
+        <select id="a_role" onchange="onAccountRoleChange()">
+          <option value="">請選擇</option>
+          <option value="academic">教务</option>
+          <option value="teacher">老師</option>
+          <option value="parent">家長</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>密碼 <span class="req">*</span></label>
+        <input type="text" id="a_password" placeholder="設置密碼">
+      </div>
+    </div>
+    <div class="form-group" id="a_ref_group" style="display:none;">
+      <label id="a_ref_label">關聯老師</label>
+      <select id="a_ref_id"></select>
+    </div>
+    <div class="form-group" id="a_child_group" style="display:none;">
+      <label>關聯學生（家長使用）</label>
+      <input type="text" id="a_child_name" placeholder="如：陳小明">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAddAccount()">放棄</button>
+      <button class="btn-save" id="saveAccountBtn" onclick="saveAccount()">確認保存</button>
+    </div>
+  </div>
+</div>
 
 <script>
   const SUPABASE_URL = 'https://fuuwjceawowojecaqfru.supabase.co'
@@ -949,12 +1014,110 @@
     }
   }
 
-  // ============ 賬號管理 ==========
+  // ============ 賬號管理 ============
 
   let allAccounts = []
 
   async function loadAccounts() {
-    allAccounts = []
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/accounts?order=created_at.desc', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+      })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      allAccounts = await res.json()
+      renderAccounts()
+    } catch (err) { alert('載入賬號列表失敗：' + err.message) }
+  }
+
+  function renderAccounts() {
+    const roleMap = { academic: '教务', teacher: '老師', parent: '家長' }
+    const tbody = document.getElementById('accountBody')
+    if (allAccounts.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="icon">🔑</div><div>暫無賬號，點擊右上角新增</div></td></tr>'
+      return
+    }
+    tbody.innerHTML = allAccounts.map(a => `
+      <tr>
+        <td>${a.username}</td>
+        <td>${a.display_name || '-'}</td>
+        <td><span class="tag tag-${a.role}">${roleMap[a.role] || a.role}</span></td>
+        <td>${a.ref_id ? 'ID:' + a.ref_id : (a.child_name || '-')}</td>
+        <td style="white-space:nowrap;">${new Date(a.created_at).toLocaleString('zh-HK')}</td>
+        <td style="text-align:center;"><span class="del-icon" onclick="deleteAccount(${a.id})" title="刪除" style="color:#f5576c;">🗑️</span></td>
+      </tr>
+    `).join('')
+  }
+
+  function openAddAccount() {
+    document.getElementById('a_username').value = ''
+    document.getElementById('a_display_name').value = ''
+    document.getElementById('a_password').value = ''
+    document.getElementById('a_role').selectedIndex = 0
+    document.getElementById('a_ref_group').style.display = 'none'
+    document.getElementById('a_child_group').style.display = 'none'
+    document.getElementById('a_ref_id').innerHTML = '<option value="">請選擇</option>'
+    document.getElementById('a_child_name').value = ''
+    document.getElementById('accountModal').classList.add('show')
+    setTimeout(() => document.getElementById('a_username').focus(), 100)
+  }
+
+  function closeAddAccount() {
+    document.getElementById('accountModal').classList.remove('show')
+  }
+
+  function onAccountRoleChange() {
+    const role = document.getElementById('a_role').value
+    document.getElementById('a_ref_group').style.display = role === 'teacher' ? 'block' : 'none'
+    document.getElementById('a_child_group').style.display = role === 'parent' ? 'block' : 'none'
+    document.getElementById('a_ref_label').textContent = role === 'teacher' ? '關聯老師' : '關聯對象'
+    if (role === 'teacher') {
+      const sel = document.getElementById('a_ref_id')
+      sel.innerHTML = '<option value="">請選擇老師</option>'
+      allTeachers.forEach(t => {
+        sel.innerHTML += '<option value="' + t.id + '">' + t.name + '</option>'
+      })
+    }
+  }
+
+  async function saveAccount() {
+    const username = document.getElementById('a_username').value.trim()
+    const password = document.getElementById('a_password').value.trim()
+    const role = document.getElementById('a_role').value
+    if (!username) { alert('請輸入用戶名'); document.getElementById('a_username').focus(); return }
+    if (!password) { alert('請設置密碼'); document.getElementById('a_password').focus(); return }
+    if (!role) { alert('請選擇角色'); return }
+    const btn = document.getElementById('saveAccountBtn')
+    btn.disabled = true; btn.textContent = '保存中...'
+    const payload = {
+      username,
+      password_hash: password,
+      role,
+      display_name: document.getElementById('a_display_name').value.trim() || null,
+      ref_id: role === 'teacher' ? (document.getElementById('a_ref_id').value || null) : null,
+      child_name: role === 'parent' ? (document.getElementById('a_child_name').value.trim() || null) : null,
+    }
+    try {
+      await apiFetch(SUPABASE_URL + '/rest/v1/accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken, 'Prefer': 'return=representation' },
+        body: JSON.stringify(payload),
+      })
+      closeAddAccount()
+      await loadAccounts()
+    } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('保存失敗：' + err.message) }
+    btn.disabled = false; btn.textContent = '確認保存'
+  }
+
+  async function deleteAccount(id) {
+    if (!confirm('確定要刪除此賬號嗎？')) return
+    try {
+      await apiFetch(SUPABASE_URL + '/rest/v1/accounts?id=eq.' + id, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+      })
+      allAccounts = allAccounts.filter(a => a.id !== id)
+      renderAccounts()
+    } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('刪除失敗：' + err.message) }
   }
 
   function switchTab(name) {
