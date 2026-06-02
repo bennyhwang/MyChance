@@ -560,7 +560,7 @@
 <!-- 回訪彈窗 -->
 <div class="modal-overlay" id="teacherModal">
   <div class="modal-box" style="max-width:580px;">
-    <h3>新增老師</h3>
+    <h3><span id="teacherModalTitle">新增老師</span></h3>
     <p class="modal-sub">請填寫老師的完整信息</p>
     <div class="form-row">
       <div class="form-group">
@@ -630,7 +630,7 @@
 <!-- 新增學生彈窗 -->
 <div class="modal-overlay" id="studentModal">
   <div class="modal-box" style="max-width:580px;">
-    <h3>新增學生</h3>
+    <h3><span id="studentModalTitle">新增學生</span></h3>
     <p class="modal-sub">請填寫學生的完整信息</p>
     <div class="form-row">
       <div class="form-group">
@@ -696,7 +696,7 @@
 <!-- 新增課程彈窗 -->
 <div class="modal-overlay" id="courseModal">
   <div class="modal-box" style="max-width:580px;">
-    <h3>新增課程</h3>
+    <h3><span id="courseModalTitle">新增課程</span></h3>
     <p class="modal-sub">請填寫課程的完整信息</p>
     <div class="form-row">
       <div class="form-group">
@@ -758,7 +758,7 @@
 <!-- 新增註冊彈窗 -->
 <div class="modal-overlay" id="registrationModal">
   <div class="modal-box" style="max-width:520px;">
-    <h3>新增註冊</h3>
+    <h3><span id="registrationModalTitle">新增註冊</span></h3>
     <p class="modal-sub">登記學生報名課程</p>
     <div class="form-group">
       <label>學生 <span class="req">*</span></label>
@@ -799,7 +799,7 @@
 <!-- 新增賬號彈窗 -->
 <div class="modal-overlay" id="accountModal">
   <div class="modal-box" style="max-width:480px;">
-    <h3>新增賬號</h3>
+    <h3><span id="accountModalTitle">新增賬號</span></h3>
     <p class="modal-sub">為教务、老師、家長創建登錄賬號</p>
     <div class="form-group">
       <label>用戶名 <span class="req">*</span></label>
@@ -1043,12 +1043,17 @@
         <td><span class="tag tag-${a.role}">${roleMap[a.role] || a.role}</span></td>
         <td>${a.ref_id ? 'ID:' + a.ref_id : (a.child_name || '-')}</td>
         <td style="white-space:nowrap;">${new Date(a.created_at).toLocaleString('zh-HK')}</td>
-        <td style="text-align:center;"><span class="del-icon" onclick="deleteAccount(${a.id})" title="刪除" style="color:#f5576c;">🗑️</span></td>
+        <td style="text-align:center;">
+          <span class="del-icon" onclick="editAccount(${a.id})" title="編輯" style="color:#667eea;margin-right:8px;">📝</span>
+          <span class="del-icon" onclick="deleteAccount(${a.id})" title="刪除" style="color:#f5576c;">🗑️</span>
+        </td>
       </tr>
     `).join('')
   }
 
   function openAddAccount() {
+    editingId = null
+    document.getElementById('accountModalTitle').textContent = '新增賬號'
     document.getElementById('a_username').value = ''
     document.getElementById('a_display_name').value = ''
     document.getElementById('a_password').value = ''
@@ -1063,6 +1068,35 @@
 
   function closeAddAccount() {
     document.getElementById('accountModal').classList.remove('show')
+  }
+
+  function editAccount(id) {
+    const a = allAccounts.find(x => x.id === id)
+    if (!a) return
+    editingId = id
+    document.getElementById('accountModalTitle').textContent = '編輯賬號'
+    document.getElementById('a_username').value = a.username || ''
+    document.getElementById('a_display_name').value = a.display_name || ''
+    document.getElementById('a_password').value = ''
+    document.getElementById('a_role').value = a.role || ''
+    // Populate teacher dropdown if needed
+    const tSel = document.getElementById('a_ref_id')
+    tSel.innerHTML = '<option value="">請選擇</option>'
+    allTeachers.forEach(t => {
+      tSel.innerHTML += '<option value="' + t.id + '">' + t.name + '</option>'
+    })
+    // Populate student dropdown if needed
+    const cSel = document.getElementById('a_child_name')
+    cSel.innerHTML = '<option value="">請選擇學生</option>'
+    allStudents.forEach(s => {
+      cSel.innerHTML += '<option value="' + s.name.replace(/"/g,'&quot;') + '">' + s.name + '</option>'
+    })
+    document.getElementById('a_ref_group').style.display = a.role === 'teacher' ? 'block' : 'none'
+    document.getElementById('a_child_group').style.display = a.role === 'parent' ? 'block' : 'none'
+    if (a.role === 'teacher') document.getElementById('a_ref_id').value = a.ref_id || ''
+    if (a.role === 'parent') document.getElementById('a_child_name').value = a.child_name || ''
+    document.getElementById('accountModal').classList.add('show')
+    setTimeout(() => document.getElementById('a_username').focus(), 100)
   }
 
   function onAccountRoleChange() {
@@ -1097,18 +1131,27 @@
     btn.disabled = true; btn.textContent = '保存中...'
     const payload = {
       username,
-      password_hash: password,
+      password_hash: password || undefined,
       role,
       display_name: document.getElementById('a_display_name').value.trim() || null,
       ref_id: role === 'teacher' ? (document.getElementById('a_ref_id').value || null) : null,
-      child_name: role === 'parent' ? (document.getElementById('a_child_name').value.trim() || null) : null,
+      child_name: role === 'parent' ? (document.getElementById('a_child_name').value || null) : null,
     }
+    if (!payload.password_hash) delete payload.password_hash
     try {
-      await apiFetch(SUPABASE_URL + '/rest/v1/accounts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken, 'Prefer': 'return=representation' },
-        body: JSON.stringify(payload),
-      })
+      if (editingId) {
+        await apiFetch(SUPABASE_URL + '/rest/v1/accounts?id=eq.' + editingId, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+          body: JSON.stringify(payload),
+        })
+      } else {
+        await apiFetch(SUPABASE_URL + '/rest/v1/accounts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken, 'Prefer': 'return=representation' },
+          body: JSON.stringify(payload),
+        })
+      }
       closeAddAccount()
       await loadAccounts()
     } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('保存失敗：' + err.message) }
@@ -1284,12 +1327,17 @@
         <td>${t.subject || '-'}</td>
         <td>${t.phone || '-'}</td>
         <td>${t.email || '-'}</td>
-        <td style="text-align:center;"><span class="del-icon" onclick="deleteTeacher(${t.id})" title="刪除" style="color:#f5576c;">🗑️</span></td>
+        <td style="text-align:center;">
+          <span class="del-icon" onclick="editTeacher(${t.id})" title="編輯" style="color:#667eea;margin-right:8px;">📝</span>
+          <span class="del-icon" onclick="deleteTeacher(${t.id})" title="刪除" style="color:#f5576c;">🗑️</span>
+        </td>
       </tr>
     `).join('')
   }
 
   function openAddTeacher() {
+    editingId = null
+    document.getElementById('teacherModalTitle').textContent = '新增老師'
     ['t_name','t_english_name','t_gender','t_age','t_qualification','t_achievement','t_specialty','t_start_date','t_subject','t_phone','t_email'].forEach(id => {
       const el = document.getElementById(id)
       if (el.tagName === 'SELECT') el.selectedIndex = 0
@@ -1301,6 +1349,26 @@
 
   function closeAddTeacher() {
     document.getElementById('teacherModal').classList.remove('show')
+  }
+
+  function editTeacher(id) {
+    const t = allTeachers.find(x => x.id === id)
+    if (!t) return
+    editingId = id
+    document.getElementById('teacherModalTitle').textContent = '編輯老師'
+    document.getElementById('t_name').value = t.name || ''
+    document.getElementById('t_english_name').value = t.english_name || ''
+    document.getElementById('t_gender').value = t.gender || ''
+    document.getElementById('t_age').value = t.age || ''
+    document.getElementById('t_qualification').value = t.qualification || ''
+    document.getElementById('t_achievement').value = t.achievement || ''
+    document.getElementById('t_specialty').value = t.specialty || ''
+    document.getElementById('t_start_date').value = t.start_date || ''
+    document.getElementById('t_subject').value = t.subject || ''
+    document.getElementById('t_phone').value = t.phone || ''
+    document.getElementById('t_email').value = t.email || ''
+    document.getElementById('teacherModal').classList.add('show')
+    setTimeout(() => document.getElementById('t_name').focus(), 100)
   }
 
   async function saveTeacher() {
@@ -1322,11 +1390,19 @@
       email: document.getElementById('t_email').value.trim() || null,
     }
     try {
-      await apiFetch(SUPABASE_URL + '/rest/v1/teachers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken, 'Prefer': 'return=representation' },
-        body: JSON.stringify(payload),
-      })
+      if (editingId) {
+        await apiFetch(SUPABASE_URL + '/rest/v1/teachers?id=eq.' + editingId, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+          body: JSON.stringify(payload),
+        })
+      } else {
+        await apiFetch(SUPABASE_URL + '/rest/v1/teachers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken, 'Prefer': 'return=representation' },
+          body: JSON.stringify(payload),
+        })
+      }
       closeAddTeacher()
       await loadTeachers()
     } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('保存失敗：' + err.message) }
@@ -1376,12 +1452,17 @@
         <td>${s.start_date || '-'}</td>
         <td>${s.parent_phone || '-'}</td>
         <td>${s.parent_email || '-'}</td>
-        <td style="text-align:center;"><span class="del-icon" onclick="deleteStudent(${s.id})" title="刪除" style="color:#f5576c;">🗑️</span></td>
+        <td style="text-align:center;">
+          <span class="del-icon" onclick="editStudent(${s.id})" title="編輯" style="color:#667eea;margin-right:8px;">📝</span>
+          <span class="del-icon" onclick="deleteStudent(${s.id})" title="刪除" style="color:#f5576c;">🗑️</span>
+        </td>
       </tr>
     `).join('')
   }
 
   function openAddStudent() {
+    editingId = null
+    document.getElementById('studentModalTitle').textContent = '新增學生'
     ['s_name','s_english_name','s_gender','s_age','s_parent_name','s_school','s_grade','s_start_date','s_parent_phone','s_parent_email'].forEach(id => {
       const el = document.getElementById(id)
       if (el.tagName === 'SELECT') el.selectedIndex = 0
@@ -1393,6 +1474,25 @@
 
   function closeAddStudent() {
     document.getElementById('studentModal').classList.remove('show')
+  }
+
+  function editStudent(id) {
+    const s = allStudents.find(x => x.id === id)
+    if (!s) return
+    editingId = id
+    document.getElementById('studentModalTitle').textContent = '編輯學生'
+    document.getElementById('s_name').value = s.name || ''
+    document.getElementById('s_english_name').value = s.english_name || ''
+    document.getElementById('s_gender').value = s.gender || ''
+    document.getElementById('s_age').value = s.age || ''
+    document.getElementById('s_parent_name').value = s.parent_name || ''
+    document.getElementById('s_school').value = s.school || ''
+    document.getElementById('s_grade').value = s.grade || ''
+    document.getElementById('s_start_date').value = s.start_date || ''
+    document.getElementById('s_parent_phone').value = s.parent_phone || ''
+    document.getElementById('s_parent_email').value = s.parent_email || ''
+    document.getElementById('studentModal').classList.add('show')
+    setTimeout(() => document.getElementById('s_name').focus(), 100)
   }
 
   async function saveStudent() {
@@ -1413,11 +1513,19 @@
       parent_email: document.getElementById('s_parent_email').value.trim() || null,
     }
     try {
-      await apiFetch(SUPABASE_URL + '/rest/v1/students', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
-        body: JSON.stringify(payload),
-      })
+      if (editingId) {
+        await apiFetch(SUPABASE_URL + '/rest/v1/students?id=eq.' + editingId, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+          body: JSON.stringify(payload),
+        })
+      } else {
+        await apiFetch(SUPABASE_URL + '/rest/v1/students', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+          body: JSON.stringify(payload),
+        })
+      }
       closeAddStudent()
       await loadStudents()
     } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('保存失敗：' + err.message) }
@@ -1466,12 +1574,17 @@
         <td>${c.classroom || '-'}</td>
         <td>${c.fee || '-'}</td>
         <td style="max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(c.materials||'').replace(/"/g,'&quot;')}">${c.materials || '-'}</td>
-        <td style="text-align:center;"><span class="del-icon" onclick="deleteCourse(${c.id})" title="刪除" style="color:#f5576c;">🗑️</span></td>
+        <td style="text-align:center;">
+          <span class="del-icon" onclick="editCourse(${c.id})" title="編輯" style="color:#667eea;margin-right:8px;">📝</span>
+          <span class="del-icon" onclick="deleteCourse(${c.id})" title="刪除" style="color:#f5576c;">🗑️</span>
+        </td>
       </tr>
     `).join('')
   }
 
   function openAddCourse() {
+    editingId = null
+    document.getElementById('courseModalTitle').textContent = '新增課程'
     const sel = document.getElementById('c_teacher')
     sel.innerHTML = '<option value="">請選擇老師</option>'
     allTeachers.forEach(t => {
@@ -1488,6 +1601,29 @@
 
   function closeAddCourse() {
     document.getElementById('courseModal').classList.remove('show')
+  }
+
+  function editCourse(id) {
+    const c = allCourses.find(x => x.id === id)
+    if (!c) return
+    editingId = id
+    document.getElementById('courseModalTitle').textContent = '編輯課程'
+    const sel = document.getElementById('c_teacher')
+    sel.innerHTML = '<option value="">請選擇老師</option>'
+    allTeachers.forEach(t => {
+      sel.innerHTML += '<option value="' + t.name.replace(/"/g,'&quot;') + '">' + t.name + '</option>'
+    })
+    document.getElementById('c_course_name').value = c.course_name || ''
+    document.getElementById('c_description').value = c.description || ''
+    document.getElementById('c_sessions').value = c.sessions || ''
+    document.getElementById('c_start_date').value = c.start_date || ''
+    document.getElementById('c_end_date').value = c.end_date || ''
+    document.getElementById('c_teacher').value = c.teacher || ''
+    document.getElementById('c_classroom').value = c.classroom || ''
+    document.getElementById('c_fee').value = c.fee || ''
+    document.getElementById('c_materials').value = c.materials || ''
+    document.getElementById('courseModal').classList.add('show')
+    setTimeout(() => document.getElementById('c_course_name').focus(), 100)
   }
 
   async function saveCourse() {
@@ -1507,11 +1643,19 @@
       materials: document.getElementById('c_materials').value.trim() || null,
     }
     try {
-      await apiFetch(SUPABASE_URL + '/rest/v1/courses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
-        body: JSON.stringify(payload),
-      })
+      if (editingId) {
+        await apiFetch(SUPABASE_URL + '/rest/v1/courses?id=eq.' + editingId, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+          body: JSON.stringify(payload),
+        })
+      } else {
+        await apiFetch(SUPABASE_URL + '/rest/v1/courses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+          body: JSON.stringify(payload),
+        })
+      }
       closeAddCourse()
       await loadCourses()
     } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('保存失敗：' + err.message) }
@@ -1557,12 +1701,17 @@
         <td>${r.payment_ref || '-'}</td>
         <td>${r.materials_delivered ? '是' : '否'}</td>
         <td style="white-space:nowrap;">${new Date(r.created_at).toLocaleString('zh-HK')}</td>
-        <td style="text-align:center;"><span class="del-icon" onclick="deleteRegistration(${r.id})" title="刪除" style="color:#f5576c;">🗑️</span></td>
+        <td style="text-align:center;">
+          <span class="del-icon" onclick="editRegistration(${r.id})" title="編輯" style="color:#667eea;margin-right:8px;">📝</span>
+          <span class="del-icon" onclick="deleteRegistration(${r.id})" title="刪除" style="color:#f5576c;">🗑️</span>
+        </td>
       </tr>
     `).join('')
   }
 
   function openAddRegistration() {
+    editingId = null
+    document.getElementById('registrationModalTitle').textContent = '新增註冊'
     // Populate student dropdown
     const sSel = document.getElementById('r_student')
     sSel.innerHTML = '<option value="">請選擇學生</option>'
@@ -1587,6 +1736,32 @@
     document.getElementById('registrationModal').classList.remove('show')
   }
 
+  function editRegistration(id) {
+    const r = allRegistrations.find(x => x.id === id)
+    if (!r) return
+    editingId = id
+    document.getElementById('registrationModalTitle').textContent = '編輯註冊'
+    // Populate student dropdown
+    const sSel = document.getElementById('r_student')
+    sSel.innerHTML = '<option value="">請選擇學生</option>'
+    allStudents.forEach(s => {
+      sSel.innerHTML += '<option value="' + s.name.replace(/"/g,'&quot;') + '">' + s.name + '</option>'
+    })
+    // Populate course dropdown
+    const cSel = document.getElementById('r_course')
+    cSel.innerHTML = '<option value="">請選擇課程</option>'
+    allCourses.forEach(c => {
+      cSel.innerHTML += '<option value="' + c.course_name.replace(/"/g,'&quot;') + '">' + c.course_name + '</option>'
+    })
+    document.getElementById('r_student').value = r.student_name || ''
+    document.getElementById('r_course').value = r.course_name || ''
+    document.getElementById('r_fee').value = r.fee || ''
+    document.getElementById('r_payment_ref').value = r.payment_ref || ''
+    document.getElementById('r_materials').value = r.materials_delivered ? 'true' : 'false'
+    document.getElementById('registrationModal').classList.add('show')
+    setTimeout(() => sSel.focus(), 100)
+  }
+
   async function saveRegistration() {
     const student = document.getElementById('r_student').value
     const course = document.getElementById('r_course').value
@@ -1602,11 +1777,19 @@
       materials_delivered: document.getElementById('r_materials').value === 'true',
     }
     try {
-      await apiFetch(SUPABASE_URL + '/rest/v1/registrations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
-        body: JSON.stringify(payload),
-      })
+      if (editingId) {
+        await apiFetch(SUPABASE_URL + '/rest/v1/registrations?id=eq.' + editingId, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+          body: JSON.stringify(payload),
+        })
+      } else {
+        await apiFetch(SUPABASE_URL + '/rest/v1/registrations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+          body: JSON.stringify(payload),
+        })
+      }
       closeAddRegistration()
       await loadRegistrations()
     } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('保存失敗：' + err.message) }
