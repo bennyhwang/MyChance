@@ -407,6 +407,7 @@
               <th>英文名</th>
               <th>性別</th>
               <th>年齡</th>
+              <th>家長姓名</th>
               <th>就讀學校</th>
               <th>年級</th>
               <th>開始時間</th>
@@ -416,7 +417,7 @@
             </tr>
           </thead>
           <tbody id="studentBody">
-            <tr><td colspan="10" class="empty"><div class="icon">🎒</div><div>暫無學生，點擊右上角新增</div></td></tr>
+            <tr><td colspan="11" class="empty"><div class="icon">🎒</div><div>暫無學生，點擊右上角新增</div></td></tr>
           </tbody>
         </table>
       </div>
@@ -610,6 +611,10 @@
       </div>
     </div>
     <div class="form-row">
+      <div class="form-group">
+        <label>家長姓名</label>
+        <input type="text" id="s_parent_name" placeholder="如：陳先生">
+      </div>
       <div class="form-group">
         <label>開始時間</label>
         <input type="text" id="s_start_date" placeholder="如：2026-06">
@@ -1021,7 +1026,7 @@
   function renderStudents() {
     const tbody = document.getElementById('studentBody')
     if (allStudents.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="10" class="empty"><div class="icon">🎒</div><div>暫無學生，點擊右上角新增</div></td></tr>'
+      tbody.innerHTML = '<tr><td colspan="11" class="empty"><div class="icon">🎒</div><div>暫無學生，點擊右上角新增</div></td></tr>'
       return
     }
     tbody.innerHTML = allStudents.map(s => `
@@ -1030,6 +1035,7 @@
         <td>${s.english_name || '-'}</td>
         <td>${s.gender || '-'}</td>
         <td>${s.age || '-'}</td>
+        <td>${s.parent_name || '-'}</td>
         <td>${s.school || '-'}</td>
         <td>${s.grade || '-'}</td>
         <td>${s.start_date || '-'}</td>
@@ -1041,7 +1047,7 @@
   }
 
   function openAddStudent() {
-    ['s_name','s_english_name','s_gender','s_age','s_school','s_grade','s_start_date','s_parent_phone','s_parent_email'].forEach(id => {
+    ['s_name','s_english_name','s_gender','s_age','s_parent_name','s_school','s_grade','s_start_date','s_parent_phone','s_parent_email'].forEach(id => {
       const el = document.getElementById(id)
       if (el.tagName === 'SELECT') el.selectedIndex = 0
       else el.value = ''
@@ -1064,6 +1070,7 @@
       english_name: document.getElementById('s_english_name').value.trim() || null,
       gender: document.getElementById('s_gender').value || null,
       age: parseInt(document.getElementById('s_age').value) || null,
+      parent_name: document.getElementById('s_parent_name').value.trim() || null,
       school: document.getElementById('s_school').value.trim() || null,
       grade: document.getElementById('s_grade').value.trim() || null,
       start_date: document.getElementById('s_start_date').value.trim() || null,

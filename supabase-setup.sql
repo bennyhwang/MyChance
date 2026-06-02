@@ -30,6 +30,7 @@ CREATE TABLE students (
   english_name TEXT,
   gender TEXT,
   age INTEGER,
+  parent_name TEXT,
   school TEXT,
   grade TEXT,
   course TEXT,
