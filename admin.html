@@ -339,6 +339,7 @@
       <button class="tab-btn" onclick="switchTab('registrations')">註冊管理</button>
       <button class="tab-btn" onclick="switchTab('accounts')">賬號管理</button>
       <button class="tab-btn" onclick="switchTab('schedules')">排課管理</button>
+      <button class="tab-btn" onclick="switchTab('attendance');setTimeout(renderAttStudentList,50)">考勤管理</button>
     </div>
 
     <!-- 咨詢記錄視圖 -->
@@ -579,6 +580,47 @@
                 <tr><td colspan="3" class="empty"><div class="icon">📅</div><div>請先選擇課程</div></td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 考勤管理視圖 -->
+    <div id="attendanceView" class="view">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <div>
+          <h1 style="font-size:1.8rem;margin-bottom:0.3rem;">考勤管理</h1>
+          <p style="color:#6b7280;font-size:0.95rem;">管理學生的上課出席記錄</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:1.5rem;align-items:flex-start;">
+        <div style="flex:0 0 260px;">
+          <input type="text" id="attStudentSearch" placeholder="搜索學生..." oninput="renderAttStudentList()" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-family:inherit;font-size:0.9rem;box-sizing:border-box;margin-bottom:0.8rem;">
+          <div id="attStudentList" style="max-height:500px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;"></div>
+        </div>
+        <div style="flex:1;">
+          <div id="attDetail" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <h3 style="margin:0;" id="attStudentName"></h3>
+              <button class="add-btn" onclick="importAttendanceExcel()">📥 導入考勤</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>課程</th>
+                    <th style="width:60px;">節數</th>
+                    <th>上課時間</th>
+                    <th style="width:80px;">出席</th>
+                  </tr>
+                </thead>
+                <tbody id="attBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="attEmpty" style="text-align:center;padding:3rem 1rem;color:#9ca3af;">
+            <div class="icon">👈</div>
+            <div>請先選擇左側學生</div>
           </div>
         </div>
       </div>
@@ -1063,6 +1105,8 @@
   let allAccounts = []
   let allSchedules = []
   let selectedCourseForSchedule = null
+  let allAttendance = []
+  let selectedAttStudent = null
 
   async function loadAccounts() {
     try {
@@ -1219,7 +1263,7 @@
   function switchTab(name) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
-    const tabs = { inquiries: 0, teachers: 1, students: 2, courses: 3, registrations: 4, accounts: 5, schedules: 6 }
+    const tabs = { inquiries: 0, teachers: 1, students: 2, courses: 3, registrations: 4, accounts: 5, schedules: 6, attendance: 7 }
     document.querySelectorAll('.tab-btn')[tabs[name]].classList.add('active')
     document.getElementById(name + 'View').classList.add('active')
   }
@@ -1963,7 +2007,163 @@
     } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('保存失敗：' + err.message) }
   }
 
-  function isTokenExpired(session) {
+  // ============ 考勤管理 ============
+
+  function renderAttStudentList() {
+    const q = (document.getElementById('attStudentSearch').value || '').toLowerCase()
+    const container = document.getElementById('attStudentList')
+    let filtered = allStudents
+    if (q) filtered = allStudents.filter(s => s.name.toLowerCase().includes(q))
+    if (filtered.length === 0) {
+      container.innerHTML = '<div style="padding:2rem;text-align:center;color:#9ca3af;">暫無學生</div>'
+      return
+    }
+    container.innerHTML = filtered.map(s => {
+      const active = selectedAttStudent === s.name ? 'background:#667eea;color:#fff;' : ''
+      return '<div onclick="selectAttStudent(\'' + s.name.replace(/'/g,"\\'") + '\')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f3f4f6;transition:all 0.2s;' + active + '" onmouseover="this.style.background=\'' + (selectedAttStudent === s.name ? '#667eea' : '#f3f4f6') + '\'" onmouseout="this.style.background=\'' + (selectedAttStudent === s.name ? '#667eea' : '') + '\'">' + s.name + '</div>'
+    }).join('')
+  }
+
+  function selectAttStudent(name) {
+    selectedAttStudent = name
+    renderAttStudentList()
+    document.getElementById('attStudentName').textContent = name
+    document.getElementById('attEmpty').style.display = 'none'
+    document.getElementById('attDetail').style.display = 'block'
+    loadAttendanceForStudent()
+  }
+
+  async function loadAttendanceForStudent() {
+    if (!selectedAttStudent) return
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/attendance?student_name=eq.' + encodeURIComponent(selectedAttStudent) + '&order=start_time.asc', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+      })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      allAttendance = await res.json()
+      renderAttendance()
+    } catch (err) { alert('載入考勤記錄失敗：' + err.message) }
+  }
+
+  function renderAttendance() {
+    const tbody = document.getElementById('attBody')
+    if (allAttendance.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty"><div class="icon">📋</div><div>暫無考勤記錄，點擊右上角導入</div></td></tr>'
+      return
+    }
+    tbody.innerHTML = allAttendance.map(a => {
+      const timeStr = a.start_time ? new Date(a.start_time).toLocaleString('zh-HK') : '-'
+      const attended = a.attended ? '是' : '否'
+      const color = a.attended ? '#10b981' : '#f5576c'
+      return '<tr><td>' + a.course_name + '</td><td style="text-align:center;">第' + a.session_number + '節</td><td>' + timeStr + '</td><td style="text-align:center;"><span class="del-icon" onclick="toggleAttended(' + a.id + ',' + a.attended + ')" style="color:' + color + ';font-weight:500;">' + attended + '</span></td></tr>'
+    }).join('')
+  }
+
+  async function toggleAttended(id, current) {
+    try {
+      await apiFetch(SUPABASE_URL + '/rest/v1/attendance?id=eq.' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+        body: JSON.stringify({ attended: !current }),
+      })
+      const rec = allAttendance.find(a => a.id === id)
+      if (rec) rec.attended = !current
+      renderAttendance()
+    } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('更新失敗：' + err.message) }
+  }
+
+  function importAttendanceExcel() {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.xlsx,.xls'
+    input.onchange = function(e) {
+      const file = e.target.files[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = function(ev) {
+        const data = new Uint8Array(ev.target.result)
+        if (typeof XLSX === 'undefined') {
+          const script = document.createElement('script')
+          script.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'
+          script.onload = function() { processExcelData(data) }
+          document.head.appendChild(script)
+        } else {
+          processExcelData(data)
+        }
+      }
+      reader.readAsArrayBuffer(file)
+    }
+    input.click()
+  }
+
+  function processExcelData(data) {
+    const wb = XLSX.read(data, { type: 'array' })
+    const ws = wb.Sheets[wb.SheetNames[0]]
+    const rows = XLSX.utils.sheet_to_json(ws)
+    if (rows.length === 0) { alert('Excel 檔案為空'); return }
+    let imported = 0, errors = 0
+    const promises = []
+    for (const row of rows) {
+      const stuName = (row['学生名字'] || row['學生名字'] || '').toString().trim()
+      const courseName = (row['课程名称'] || row['課程名稱'] || '').toString().trim()
+      const timeRaw = row['课程时间'] || row['課程時間'] || ''
+      const attRaw = (row['是否参加'] || row['是否參加'] || '').toString().trim()
+      if (!stuName || !courseName) { errors++; continue }
+      let startTime = null
+      if (timeRaw) {
+        if (typeof timeRaw === 'number') {
+          const d = new Date((timeRaw - 25569) * 86400 * 1000)
+          startTime = d.toISOString()
+        } else {
+          const d = new Date(timeRaw)
+          if (!isNaN(d.getTime())) startTime = d.toISOString()
+        }
+      }
+      const attended = attRaw === '是' || attRaw === 'Y' || attRaw === 'y' || attRaw === '1' || attRaw === '参加'
+      let sessionNum = 1
+      if (startTime) {
+        const matchingSched = allSchedules.filter(s => {
+          const course = allCourses.find(c => c.id === s.course_id)
+          return course && course.course_name === courseName
+        })
+        if (matchingSched.length > 0) {
+          const targetMs = new Date(startTime).getTime()
+          let bestMatch = null, bestDist = Infinity
+          for (const ms of matchingSched) {
+            if (!ms.start_time) continue
+            const dist = Math.abs(new Date(ms.start_time).getTime() - targetMs)
+            if (dist < bestDist) { bestDist = dist; bestMatch = ms }
+          }
+          if (bestMatch && bestDist < 3600000) sessionNum = bestMatch.session_number
+        }
+      }
+      promises.push((async function(sn, cn, st, att) {
+        try {
+          const existingRes = await fetch(SUPABASE_URL + '/rest/v1/attendance?student_name=eq.' + encodeURIComponent(stuName) + '&course_name=eq.' + encodeURIComponent(cn) + '&session_number=eq.' + sn + '&select=id', {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+          })
+          const existing = await existingRes.json()
+          const payload = { student_name: stuName, course_name: cn, session_number: sn, start_time: st || null, attended: att }
+          if (existing && existing.length > 0) {
+            await apiFetch(SUPABASE_URL + '/rest/v1/attendance?id=eq.' + existing[0].id, {
+              method: 'PATCH', headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken }, body: JSON.stringify({ attended: att, start_time: st || null }),
+            })
+          } else {
+            await apiFetch(SUPABASE_URL + '/rest/v1/attendance', {
+              method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken }, body: JSON.stringify(payload),
+            })
+          }
+          imported++
+        } catch (e) { errors++ }
+      })(sessionNum, courseName, startTime, attended))
+    }
+    Promise.all(promises).then(function() {
+      let msg = '導入完成：成功 ' + imported + ' 條'
+      if (errors > 0) msg += '，失敗 ' + errors + ' 條'
+      alert(msg)
+      loadAttendanceForStudent()
+    })
+  }
     if (!session.expires_at) return false
     return Date.now() / 1000 > session.expires_at
   }

@@ -173,3 +173,20 @@ CREATE POLICY "auth_select_schedules" ON schedules FOR SELECT TO authenticated U
 CREATE POLICY "auth_insert_schedules" ON schedules FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "auth_update_schedules" ON schedules FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "auth_delete_schedules" ON schedules FOR DELETE TO authenticated USING (true);
+
+CREATE TABLE attendance (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  student_name TEXT NOT NULL,
+  course_name TEXT NOT NULL,
+  session_number INTEGER NOT NULL,
+  start_time TIMESTAMPTZ,
+  attended BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "auth_select_attendance" ON attendance FOR SELECT TO authenticated USING (true);
+CREATE POLICY "auth_insert_attendance" ON attendance FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "auth_update_attendance" ON attendance FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "auth_delete_attendance" ON attendance FOR DELETE TO authenticated USING (true);
