@@ -226,6 +226,10 @@
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
     .del-icon { cursor: pointer; font-size: 1.1rem; transition: transform 0.2s; }
     .del-icon:hover { transform: scale(1.2); }
+    .tag { display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.8rem;font-weight:500; }
+    .tag-academic { background:#e0e7ff;color:#3730a3; }
+    .tag-teacher { background:#d1fae5;color:#065f46; }
+    .tag-parent { background:#fef3c7;color:#92400e; }
 
     .login-page {
       min-height: 100vh;
@@ -282,24 +286,46 @@
   <a href="index.html" class="logo"><img src="JnTlogo.jpg" alt="佳思教育" class="nav-logo"> 佳思教育</a>
   <div class="nav-right">
     <span id="userEmail"></span>
+    <span id="userRole" style="color:#6b7280;font-size:0.85rem;display:none;"></span>
     <button class="logout-btn" onclick="logout()">登出</button>
   </div>
 </nav>
 
 <div id="loginPage" class="login-page">
   <div class="login-card">
-    <h1>後台管理</h1>
-    <p class="sub">請使用管理員賬號登錄</p>
-    <div class="form-group">
-      <label>郵箱</label>
-      <input type="email" id="loginEmail" placeholder="admin@email.com">
+    <h1 style="text-align:center;margin-bottom:0;">後台管理</h1>
+    <div style="display:flex;gap:0;margin:1.2rem 0 1.5rem;border-bottom:2px solid #e5e7eb;">
+      <button class="login-tab" onclick="switchLoginTab('admin')" style="flex:1;padding:0.6rem;border:none;background:none;font-family:inherit;font-size:0.95rem;font-weight:500;color:#6b7280;cursor:pointer;border-bottom:3px solid #667eea;margin-bottom:-2px;transition:all 0.3s;" id="loginTabAdmin">管理員</button>
+      <button class="login-tab" onclick="switchLoginTab('role')" style="flex:1;padding:0.6rem;border:none;background:none;font-family:inherit;font-size:0.95rem;font-weight:500;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.3s;" id="loginTabRole">身份登錄</button>
     </div>
-    <div class="form-group">
-      <label>密碼</label>
-      <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+
+    <div id="adminLoginForm">
+      <p style="color:#6b7280;margin-bottom:1.2rem;text-align:center;font-size:0.9rem;">管理員郵箱密碼登錄</p>
+      <div class="form-group">
+        <label>郵箱</label>
+        <input type="email" id="loginEmail" placeholder="admin@email.com">
+      </div>
+      <div class="form-group">
+        <label>密碼</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
+      </div>
+      <button class="login-btn" id="loginBtn" onclick="login()">登錄</button>
+      <div class="login-error" id="loginError" style="color:#f5576c;font-size:0.85rem;margin-top:0.8rem;text-align:center;display:none;">郵箱或密碼錯誤</div>
     </div>
-    <button class="login-btn" id="loginBtn" onclick="login()">登錄</button>
-    <div class="login-error" id="loginError">郵箱或密碼錯誤</div>
+
+    <div id="roleLoginForm" style="display:none;">
+      <p style="color:#6b7280;margin-bottom:1.2rem;text-align:center;font-size:0.9rem;">使用管理員創建的賬號登錄</p>
+      <div class="form-group">
+        <label>用戶名</label>
+        <input type="text" id="loginUsername" placeholder="如：teacher01" onkeydown="if(event.key==='Enter')loginRole()">
+      </div>
+      <div class="form-group">
+        <label>密碼</label>
+        <input type="password" id="loginRolePassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginRole()">
+      </div>
+      <button class="login-btn" id="loginRoleBtn" onclick="loginRole()">登錄</button>
+      <div class="login-error" id="loginRoleError" style="color:#f5576c;font-size:0.85rem;margin-top:0.8rem;text-align:center;display:none;">用戶名或密碼錯誤</div>
+    </div>
   </div>
 </div>
 
@@ -311,6 +337,7 @@
       <button class="tab-btn" onclick="switchTab('students')">學生管理</button>
       <button class="tab-btn" onclick="switchTab('courses')">課程管理</button>
       <button class="tab-btn" onclick="switchTab('registrations')">註冊管理</button>
+      <button class="tab-btn" onclick="switchTab('accounts')">賬號管理</button>
     </div>
 
     <!-- 咨詢記錄視圖 -->
@@ -480,6 +507,33 @@
           </thead>
           <tbody id="registrationBody">
             <tr><td colspan="7" class="empty"><div class="icon">📝</div><div>暫無註冊記錄，點擊右上角新增</div></td></tr>
+          </tbody>
+        </table>
+    </div>
+
+    <!-- 賬號管理視圖 -->
+    <div id="accountsView" class="view">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <div>
+          <h1 style="font-size:1.8rem;margin-bottom:0.3rem;">賬號管理</h1>
+          <p style="color:#6b7280;font-size:0.95rem;">為教务、老師、家長創建登錄賬號</p>
+        </div>
+        <button class="add-btn" onclick="openAddAccount()">+ 新建賬號</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>用戶名</th>
+              <th>顯示名稱</th>
+              <th>角色</th>
+              <th>關聯對象</th>
+              <th>創建時間</th>
+              <th style="cursor:default;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="accountBody">
+            <tr><td colspan="6" class="empty"><div class="icon">🔑</div><div>暫無賬號</div></td></tr>
           </tbody>
         </table>
       </div>
@@ -740,6 +794,49 @@
   </div>
 </div>
 
+<!-- 新建賬號彈窗 -->
+<div class="modal-overlay" id="accountModal">
+  <div class="modal-box" style="max-width:480px;">
+    <h3>新建賬號</h3>
+    <p class="modal-sub">為教务 / 老師 / 家長創建登錄賬號</p>
+    <div class="form-group">
+      <label>用戶名 <span class="req">*</span></label>
+      <input type="text" id="a_username" placeholder="如：teacher01（字母+數字）">
+    </div>
+    <div class="form-group">
+      <label>顯示名稱</label>
+      <input type="text" id="a_display_name" placeholder="如：張志明老師">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>角色 <span class="req">*</span></label>
+        <select id="a_role" onchange="onAccountRoleChange()">
+          <option value="">請選擇</option>
+          <option value="academic">教务</option>
+          <option value="teacher">老師</option>
+          <option value="parent">家長</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>密碼 <span class="req">*</span></label>
+        <input type="text" id="a_password" placeholder="設置密碼">
+      </div>
+    </div>
+    <div class="form-group" id="a_ref_group" style="display:none;">
+      <label id="a_ref_label">關聯老師</label>
+      <select id="a_ref_id"></select>
+    </div>
+    <div class="form-group" id="a_child_group" style="display:none;">
+      <label>關聯學生（家長使用）</label>
+      <input type="text" id="a_child_name" placeholder="如：陳小明">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeAddAccount()">放棄</button>
+      <button class="btn-save" id="saveAccountBtn" onclick="saveAccount()">確認保存</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const SUPABASE_URL = 'https://fuuwjceawowojecaqfru.supabase.co'
   const SUPABASE_KEY = 'sb_publishable_M3lmOrr1QDDkkKE3r9q7qQ_mVnLlYtQ'
@@ -776,7 +873,7 @@
       document.getElementById('loginPage').style.display = 'none'
       document.getElementById('navBar').style.display = 'flex'
       document.getElementById('adminPage').style.display = 'block'
-      await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses(), loadRegistrations()])
+      await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses(), loadRegistrations(), loadAccounts()])
     } catch (_) {
       const errEl = document.getElementById('loginError')
       errEl.style.display = 'block'
@@ -787,15 +884,244 @@
   function logout() {
     accessToken = null
     localStorage.removeItem('supabase_session')
+    localStorage.removeItem('role_session')
     document.getElementById('adminPage').style.display = 'none'
     document.getElementById('navBar').style.display = 'none'
+    document.getElementById('userRole').style.display = 'none'
     document.getElementById('loginPage').style.display = 'flex'
+    document.getElementById('loginEmail').value = ''
+    document.getElementById('loginPassword').value = ''
+    document.getElementById('loginUsername').value = ''
+    document.getElementById('loginRolePassword').value = ''
+    document.getElementById('loginError').style.display = 'none'
+    document.getElementById('loginRoleError').style.display = 'none'
+  }
+
+  // ============ 登錄方式切換 ============
+
+  function switchLoginTab(type) {
+    document.querySelectorAll('.login-tab').forEach(b => {
+      b.style.borderBottomColor = 'transparent'
+      b.style.color = '#6b7280'
+    })
+    const tabs = { admin: 'loginTabAdmin', role: 'loginTabRole' }
+    const el = document.getElementById(tabs[type])
+    el.style.borderBottomColor = '#667eea'
+    el.style.color = '#667eea'
+    document.getElementById('adminLoginForm').style.display = type === 'admin' ? 'block' : 'none'
+    document.getElementById('roleLoginForm').style.display = type === 'role' ? 'block' : 'none'
+  }
+
+  // ============ 身份登錄 ============
+
+  let currentRole = null
+  let currentRoleDisplayName = null
+
+  async function loginRole() {
+    const username = document.getElementById('loginUsername').value.trim()
+    const password = document.getElementById('loginRolePassword').value
+    const btn = document.getElementById('loginRoleBtn')
+    const errEl = document.getElementById('loginRoleError')
+    errEl.style.display = 'none'
+    if (!username || !password) { errEl.textContent = '請輸入用戶名和密碼'; errEl.style.display = 'block'; return }
+    btn.disabled = true; btn.textContent = '登錄中...'
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/login_account', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_username: username, p_password: password }),
+      })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      const result = await res.json()
+      if (!result || result.length === 0) { errEl.textContent = '用戶名或密碼錯誤'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = '登錄'; return }
+      const acct = result[0]
+      currentRole = acct.role
+      currentRoleDisplayName = acct.display_name || acct.username
+      const session = { role: acct.role, display_name: currentRoleDisplayName, username: acct.username, ref_id: acct.ref_id, child_name: acct.child_name, login_at: new Date().toISOString() }
+      localStorage.setItem('role_session', JSON.stringify(session))
+      localStorage.removeItem('supabase_session')
+      accessToken = null
+      document.getElementById('userEmail').textContent = currentRoleDisplayName
+      document.getElementById('userRole').textContent = '（' + roleLabel(currentRole) + '）'
+      document.getElementById('userRole').style.display = 'inline'
+      document.getElementById('loginPage').style.display = 'none'
+      document.getElementById('navBar').style.display = 'flex'
+      document.getElementById('adminPage').style.display = 'block'
+      applyRoleRestrictions()
+      await loadRoleData(session)
+    } catch (err) {
+      errEl.textContent = '登錄失敗：' + err.message
+      errEl.style.display = 'block'
+    }
+    btn.disabled = false; btn.textContent = '登錄'
+  }
+
+  function roleLabel(role) {
+    return { academic: '教务', teacher: '老師', parent: '家長' }[role] || role
+  }
+
+  function applyRoleRestrictions() {
+    document.querySelectorAll('.tab-btn').forEach(b => b.style.display = '')
+    document.querySelectorAll('.add-btn, .del-icon, .close-icon').forEach(el => { if (el.closest('.view') || el.tagName === 'BUTTON' || el.classList.contains('del-icon')) el.style.display = '' })
+    if (currentRole === 'admin') return
+    if (currentRole === 'academic') {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        const n = b.textContent.trim()
+        if (n === '賬號管理') b.style.display = 'none'
+      })
+      document.querySelectorAll('.add-btn').forEach(b => b.style.display = 'none')
+      document.querySelectorAll('.del-icon').forEach(b => b.style.display = 'none')
+      return
+    }
+    if (currentRole === 'teacher') {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        const n = b.textContent.trim()
+        if (!['課程管理', '學生管理'].includes(n)) b.style.display = 'none'
+      })
+      document.querySelectorAll('.add-btn, .del-icon').forEach(el => el.style.display = 'none')
+      return
+    }
+    if (currentRole === 'parent') {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        const n = b.textContent.trim()
+        if (n !== '註冊管理') b.style.display = 'none'
+      })
+      document.querySelectorAll('.add-btn, .del-icon').forEach(el => el.style.display = 'none')
+      switchTab('registrations')
+      return
+    }
+  }
+
+  async function loadRoleData(session) {
+    if (currentRole === 'academic') {
+      await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses(), loadRegistrations()])
+      switchTab('inquiries')
+    } else if (currentRole === 'teacher') {
+      await loadCourses()
+      renderCourses()
+      await loadStudents()
+      renderStudents()
+      switchTab('courses')
+    } else if (currentRole === 'parent') {
+      await loadRegistrations()
+      if (session.child_name) {
+        allRegistrations = allRegistrations.filter(r => r.student_name === session.child_name)
+      }
+      renderRegistrations()
+      switchTab('registrations')
+    }
+  }
+
+  // ============ 賬號管理 ============
+
+  let allAccounts = []
+
+  async function loadAccounts() {
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/accounts?order=created_at.desc', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+      })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      allAccounts = await res.json()
+      renderAccounts()
+    } catch (err) { alert('載入賬號失敗：' + err.message) }
+  }
+
+  function renderAccounts() {
+    const roleMap = { academic: '教务', teacher: '老師', parent: '家長' }
+    const tbody = document.getElementById('accountBody')
+    if (allAccounts.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="icon">🔑</div><div>暫無賬號</div></td></tr>'
+      return
+    }
+    tbody.innerHTML = allAccounts.map(a => `
+      <tr>
+        <td>${a.username}</td>
+        <td>${a.display_name || '-'}</td>
+        <td><span class="tag tag-${a.role}">${roleMap[a.role] || a.role}</span></td>
+        <td>${a.ref_id ? 'ID:' + a.ref_id : (a.child_name || '-')}</td>
+        <td style="white-space:nowrap;">${new Date(a.created_at).toLocaleString('zh-HK')}</td>
+        <td style="text-align:center;"><span class="del-icon" onclick="deleteAccount(${a.id})" title="刪除" style="color:#f5576c;">🗑️</span></td>
+      </tr>
+    `).join('')
+  }
+
+  function openAddAccount() {
+    document.getElementById('a_username').value = ''
+    document.getElementById('a_display_name').value = ''
+    document.getElementById('a_password').value = ''
+    document.getElementById('a_role').selectedIndex = 0
+    document.getElementById('a_ref_group').style.display = 'none'
+    document.getElementById('a_child_group').style.display = 'none'
+    document.getElementById('a_ref_id').innerHTML = '<option value="">請選擇</option>'
+    document.getElementById('a_child_name').value = ''
+    document.getElementById('accountModal').classList.add('show')
+    setTimeout(() => document.getElementById('a_username').focus(), 100)
+  }
+
+  function closeAddAccount() {
+    document.getElementById('accountModal').classList.remove('show')
+  }
+
+  function onAccountRoleChange() {
+    const role = document.getElementById('a_role').value
+    document.getElementById('a_ref_group').style.display = role === 'teacher' ? 'block' : 'none'
+    document.getElementById('a_child_group').style.display = role === 'parent' ? 'block' : 'none'
+    document.getElementById('a_ref_label').textContent = role === 'teacher' ? '關聯老師' : '關聯對象'
+    if (role === 'teacher') {
+      const sel = document.getElementById('a_ref_id')
+      sel.innerHTML = '<option value="">請選擇老師</option>'
+      allTeachers.forEach(t => {
+        sel.innerHTML += '<option value="' + t.id + '">' + t.name + '</option>'
+      })
+    }
+  }
+
+  async function saveAccount() {
+    const username = document.getElementById('a_username').value.trim()
+    const password = document.getElementById('a_password').value.trim()
+    const role = document.getElementById('a_role').value
+    if (!username) { alert('請輸入用戶名'); return }
+    if (!password) { alert('請設置密碼'); return }
+    if (!role) { alert('請選擇角色'); return }
+    const btn = document.getElementById('saveAccountBtn')
+    btn.disabled = true; btn.textContent = '保存中...'
+    const payload = {
+      username,
+      password_hash: password,
+      role,
+      display_name: document.getElementById('a_display_name').value.trim() || null,
+      ref_id: role === 'teacher' ? (document.getElementById('a_ref_id').value || null) : null,
+      child_name: role === 'parent' ? (document.getElementById('a_child_name').value.trim() || null) : null,
+    }
+    try {
+      await apiFetch(SUPABASE_URL + '/rest/v1/accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+        body: JSON.stringify(payload),
+      })
+      closeAddAccount()
+      if (document.getElementById('accountsView').classList.contains('active')) await loadAccounts()
+    } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('保存失敗：' + err.message) }
+    btn.disabled = false; btn.textContent = '確認保存'
+  }
+
+  async function deleteAccount(id) {
+    if (!confirm('確定要刪除此賬號嗎？')) return
+    try {
+      await apiFetch(SUPABASE_URL + '/rest/v1/accounts?id=eq.' + id, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+      })
+      allAccounts = allAccounts.filter(a => a.id !== id)
+      renderAccounts()
+    } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('刪除失敗：' + err.message) }
   }
 
   function switchTab(name) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
-    const tabs = { inquiries: 0, teachers: 1, students: 2, courses: 3, registrations: 4 }
+    const tabs = { inquiries: 0, teachers: 1, students: 2, courses: 3, registrations: 4, accounts: 5 }
     document.querySelectorAll('.tab-btn')[tabs[name]].classList.add('active')
     document.getElementById(name + 'View').classList.add('active')
   }
@@ -1296,6 +1622,27 @@
   }
 
   async function checkSession() {
+    // Check role session first
+    const roleStored = localStorage.getItem('role_session')
+    if (roleStored) {
+      try {
+        const session = JSON.parse(roleStored)
+        if (session.role && session.display_name) {
+          currentRole = session.role
+          currentRoleDisplayName = session.display_name
+          document.getElementById('userEmail').textContent = currentRoleDisplayName
+          document.getElementById('userRole').textContent = '（' + roleLabel(currentRole) + '）'
+          document.getElementById('userRole').style.display = 'inline'
+          document.getElementById('loginPage').style.display = 'none'
+          document.getElementById('navBar').style.display = 'flex'
+          document.getElementById('adminPage').style.display = 'block'
+          applyRoleRestrictions()
+          await loadRoleData(session)
+          return
+        }
+      } catch (_) { localStorage.removeItem('role_session') }
+    }
+    // Check admin session
     const stored = localStorage.getItem('supabase_session')
     if (!stored) return
     try {
@@ -1305,11 +1652,12 @@
         return
       }
       accessToken = session.access_token
+      currentRole = 'admin'
       document.getElementById('userEmail').textContent = session.user.email
       document.getElementById('loginPage').style.display = 'none'
       document.getElementById('navBar').style.display = 'flex'
       document.getElementById('adminPage').style.display = 'block'
-      await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses(), loadRegistrations()])
+      await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses(), loadRegistrations(), loadAccounts()])
     } catch (_) { localStorage.removeItem('supabase_session') }
   }
 

@@ -85,6 +85,45 @@ CREATE POLICY "auth_insert_registrations" ON registrations FOR INSERT TO authent
 CREATE POLICY "auth_update_registrations" ON registrations FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "auth_delete_registrations" ON registrations FOR DELETE TO authenticated USING (true);
 
+CREATE TABLE accounts (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  display_name TEXT,
+  role TEXT NOT NULL CHECK (role IN ('admin', 'academic', 'teacher', 'parent')),
+  ref_id BIGINT,
+  child_name TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "auth_select_accounts" ON accounts FOR SELECT TO authenticated USING (true);
+CREATE POLICY "auth_insert_accounts" ON accounts FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "auth_delete_accounts" ON accounts FOR DELETE TO authenticated USING (true);
+
+-- RPC function for secure role login (no anon SELECT on accounts table)
+CREATE OR REPLACE FUNCTION login_account(p_username TEXT, p_password TEXT)
+RETURNS TABLE(id BIGINT, username TEXT, display_name TEXT, role TEXT, ref_id BIGINT, child_name TEXT)
+LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  RETURN QUERY
+  SELECT a.id, a.username, a.display_name, a.role, a.ref_id, a.child_name
+  FROM accounts a
+  WHERE a.username = p_username AND a.password_hash = p_password;
+END;
+$$;
+
+-- Allow anon to call the login function
+GRANT EXECUTE ON FUNCTION login_account TO anon, authenticated;
+
+-- Allow anon SELECT on all tables (for non-admin role-based views)
+CREATE POLICY "anon_select_inquiries" ON inquiries FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_select_teachers" ON teachers FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_select_students" ON students FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_select_courses" ON courses FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_select_registrations" ON registrations FOR SELECT TO anon USING (true);
+
 CREATE TABLE inquiries (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   parent_name TEXT NOT NULL,
