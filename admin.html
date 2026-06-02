@@ -338,7 +338,7 @@
       <button class="tab-btn" onclick="switchTab('courses')">課程管理</button>
       <button class="tab-btn" onclick="switchTab('registrations')">註冊管理</button>
       <button class="tab-btn" onclick="switchTab('accounts')">賬號管理</button>
-      <button class="tab-btn" onclick="switchTab('schedules')">排課管理</button>
+      <button class="tab-btn" onclick="switchTab('schedules');setTimeout(renderScheduleCourseList,50)">排課管理</button>
       <button class="tab-btn" onclick="switchTab('attendance');setTimeout(renderAttStudentList,50)">考勤管理</button>
     </div>
 
@@ -552,14 +552,10 @@
         </div>
       </div>
       <div style="display:flex;gap:1.5rem;align-items:flex-start;">
-        <div style="flex:0 0 300px;">
-          <div class="form-group">
-            <label>選擇課程</label>
-            <select id="scheduleCourseSelect" onchange="onScheduleCourseChange()">
-              <option value="">請選擇課程</option>
-            </select>
-          </div>
-          <div id="scheduleTeacherInfo" style="display:none;margin-top:0.8rem;padding:1rem;background:#f9fafb;border-radius:8px;">
+        <div style="flex:0 0 260px;">
+          <input type="text" id="schedCourseSearch" placeholder="搜索課程..." oninput="renderScheduleCourseList()" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-family:inherit;font-size:0.9rem;box-sizing:border-box;margin-bottom:0.8rem;">
+          <div id="schedCourseList" style="max-height:500px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;"></div>
+          <div id="schedTeacherInfo" style="display:none;margin-top:0.8rem;padding:1rem;background:#f9fafb;border-radius:8px;">
             <p style="margin:0 0 0.5rem;font-weight:500;color:#374151;">授課老師</p>
             <p style="margin:0.2rem 0;color:#6b7280;font-size:0.9rem;" id="schedTeacherName"></p>
             <p style="margin:0.2rem 0;color:#6b7280;font-size:0.9rem;" id="schedTeacherPhone"></p>
@@ -1644,7 +1640,7 @@
       if (!res.ok) throw new Error('HTTP ' + res.status)
       allCourses = await res.json()
       renderCourses()
-      populateScheduleCourseDropdown()
+      renderScheduleCourseList()
     } catch (err) { alert('載入課程列表失敗：' + err.message) }
   }
 
@@ -1901,33 +1897,31 @@
 
   // ============ 排課管理 ============
 
-  function populateScheduleCourseDropdown() {
-    const sel = document.getElementById('scheduleCourseSelect')
-    if (!sel) return
-    sel.innerHTML = '<option value="">請選擇課程</option>'
-    allCourses.forEach(c => {
-      sel.innerHTML += '<option value="' + c.id + '">' + c.course_name + '</option>'
-    })
-  }
-
-  function onScheduleCourseChange() {
-    const cid = document.getElementById('scheduleCourseSelect').value
-    if (!cid) {
-      document.getElementById('scheduleTeacherInfo').style.display = 'none'
-      document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="3" class="empty"><div class="icon">📅</div><div>請先選擇課程</div></td></tr>'
-      selectedCourseForSchedule = null
+  function renderScheduleCourseList() {
+    const q = (document.getElementById('schedCourseSearch').value || '').toLowerCase()
+    const container = document.getElementById('schedCourseList')
+    let filtered = allCourses
+    if (q) filtered = allCourses.filter(c => c.course_name.toLowerCase().includes(q))
+    if (filtered.length === 0) {
+      container.innerHTML = '<div style="padding:2rem;text-align:center;color:#9ca3af;">暫無課程</div>'
       return
     }
-    selectedCourseForSchedule = parseInt(cid)
-    const course = allCourses.find(c => c.id === selectedCourseForSchedule)
+    container.innerHTML = filtered.map(c => {
+      const active = selectedCourseForSchedule === c.id ? 'background:#667eea;color:#fff;' : ''
+      return '<div onclick="selectScheduleCourse(' + c.id + ')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f3f4f6;transition:all 0.2s;' + active + '" onmouseover="this.style.background=\'' + (selectedCourseForSchedule === c.id ? '#667eea' : '#f3f4f6') + '\'" onmouseout="this.style.background=\'' + (selectedCourseForSchedule === c.id ? '#667eea' : '') + '\'">' + c.course_name + '</div>'
+    }).join('')
+  }
+
+  function selectScheduleCourse(cid) {
+    selectedCourseForSchedule = cid
+    renderScheduleCourseList()
+    const course = allCourses.find(c => c.id === cid)
     if (!course) return
-    // Show teacher info
     const teacher = allTeachers.find(t => t.name === course.teacher)
     document.getElementById('schedTeacherName').innerHTML = '<strong>' + (course.teacher || '-') + '</strong>'
     document.getElementById('schedTeacherPhone').textContent = '手機：' + (teacher ? (teacher.phone || '-') : '-')
     document.getElementById('schedTeacherEmail').textContent = '郵箱：' + (teacher ? (teacher.email || '-') : '-')
-    document.getElementById('scheduleTeacherInfo').style.display = 'block'
-    // Load schedules for this course
+    document.getElementById('schedTeacherInfo').style.display = 'block'
     loadSessionsForCourse()
   }
 
