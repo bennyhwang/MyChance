@@ -513,25 +513,7 @@
 
     <!-- 賬號管理視圖 -->
     <div id="accountsView" class="view">
-      <h1 style="font-size:1.8rem;margin-bottom:0.3rem;">賬號管理</h1>
-      <p style="color:#6b7280;font-size:0.95rem;margin-bottom:1.5rem;">管理所有登錄賬號</p>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>用戶名</th>
-              <th>顯示名稱</th>
-              <th>角色</th>
-              <th>關聯對象</th>
-              <th>創建時間</th>
-            </tr>
-          </thead>
-          <tbody id="accountBody">
-            <tr><td colspan="5" class="empty"><div class="icon">🔑</div><div>暫無賬號</div></td></tr>
-          </tbody>
-        </table>
-      </div>
+      <h1 style="font-size:3rem;text-align:center;padding:4rem;color:#667eea;">现在正常了吗？</h1>
     </div>
   </div>
 </div>
@@ -971,32 +953,7 @@
   let allAccounts = []
 
   async function loadAccounts() {
-    try {
-      const res = await fetch(SUPABASE_URL + '/rest/v1/accounts?order=created_at.desc', {
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
-      })
-      if (!res.ok) throw new Error('HTTP ' + res.status)
-      allAccounts = await res.json()
-      renderAccounts()
-    } catch (err) { alert('載入賬號列表失敗：' + err.message) }
-  }
-
-  function renderAccounts() {
-    const roleMap = { academic: '教务', teacher: '老師', parent: '家長' }
-    const tbody = document.getElementById('accountBody')
-    if (allAccounts.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty"><div class="icon">🔑</div><div>暫無賬號</div></td></tr>'
-      return
-    }
-    tbody.innerHTML = allAccounts.map(a => `
-      <tr>
-        <td>${a.username}</td>
-        <td>${a.display_name || '-'}</td>
-        <td>${roleMap[a.role] || a.role}</td>
-        <td>${a.ref_id ? 'ID:' + a.ref_id : (a.child_name || '-')}</td>
-        <td style="white-space:nowrap;">${new Date(a.created_at).toLocaleString('zh-HK')}</td>
-      </tr>
-    `).join('')
+    allAccounts = []
   }
 
   function switchTab(name) {
