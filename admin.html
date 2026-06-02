@@ -338,6 +338,7 @@
       <button class="tab-btn" onclick="switchTab('courses')">課程管理</button>
       <button class="tab-btn" onclick="switchTab('registrations')">註冊管理</button>
       <button class="tab-btn" onclick="switchTab('accounts')">賬號管理</button>
+      <button class="tab-btn" onclick="switchTab('schedules')">排課管理</button>
     </div>
 
     <!-- 咨詢記錄視圖 -->
@@ -540,6 +541,49 @@
         </table>
       </div>
     </div>
+
+    <!-- 排課管理視圖 -->
+    <div id="schedulesView" class="view">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <div>
+          <h1 style="font-size:1.8rem;margin-bottom:0.3rem;">排課管理</h1>
+          <p style="color:#6b7280;font-size:0.95rem;">設定每門課程的每節課上課時間</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:1.5rem;align-items:flex-start;">
+        <div style="flex:0 0 300px;">
+          <div class="form-group">
+            <label>選擇課程</label>
+            <select id="scheduleCourseSelect" onchange="onScheduleCourseChange()">
+              <option value="">請選擇課程</option>
+            </select>
+          </div>
+          <div id="scheduleTeacherInfo" style="display:none;margin-top:0.8rem;padding:1rem;background:#f9fafb;border-radius:8px;">
+            <p style="margin:0 0 0.5rem;font-weight:500;color:#374151;">授課老師</p>
+            <p style="margin:0.2rem 0;color:#6b7280;font-size:0.9rem;" id="schedTeacherName"></p>
+            <p style="margin:0.2rem 0;color:#6b7280;font-size:0.9rem;" id="schedTeacherPhone"></p>
+            <p style="margin:0.2rem 0;color:#6b7280;font-size:0.9rem;" id="schedTeacherEmail"></p>
+          </div>
+        </div>
+        <div style="flex:1;">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:60px;">節數</th>
+                  <th>上課時間</th>
+                  <th style="width:80px;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="scheduleBody">
+                <tr><td colspan="3" class="empty"><div class="icon">📅</div><div>請先選擇課程</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1017,6 +1061,8 @@
   // ============ 賬號管理 ============
 
   let allAccounts = []
+  let allSchedules = []
+  let selectedCourseForSchedule = null
 
   async function loadAccounts() {
     try {
@@ -1173,7 +1219,7 @@
   function switchTab(name) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
-    const tabs = { inquiries: 0, teachers: 1, students: 2, courses: 3, registrations: 4, accounts: 5 }
+    const tabs = { inquiries: 0, teachers: 1, students: 2, courses: 3, registrations: 4, accounts: 5, schedules: 6 }
     document.querySelectorAll('.tab-btn')[tabs[name]].classList.add('active')
     document.getElementById(name + 'View').classList.add('active')
   }
@@ -1554,6 +1600,7 @@
       if (!res.ok) throw new Error('HTTP ' + res.status)
       allCourses = await res.json()
       renderCourses()
+      populateScheduleCourseDropdown()
     } catch (err) { alert('載入課程列表失敗：' + err.message) }
   }
 
@@ -1808,6 +1855,114 @@
     } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('刪除失敗：' + err.message) }
   }
 
+  // ============ 排課管理 ============
+
+  function populateScheduleCourseDropdown() {
+    const sel = document.getElementById('scheduleCourseSelect')
+    if (!sel) return
+    sel.innerHTML = '<option value="">請選擇課程</option>'
+    allCourses.forEach(c => {
+      sel.innerHTML += '<option value="' + c.id + '">' + c.course_name + '</option>'
+    })
+  }
+
+  function onScheduleCourseChange() {
+    const cid = document.getElementById('scheduleCourseSelect').value
+    if (!cid) {
+      document.getElementById('scheduleTeacherInfo').style.display = 'none'
+      document.getElementById('scheduleBody').innerHTML = '<tr><td colspan="3" class="empty"><div class="icon">📅</div><div>請先選擇課程</div></td></tr>'
+      selectedCourseForSchedule = null
+      return
+    }
+    selectedCourseForSchedule = parseInt(cid)
+    const course = allCourses.find(c => c.id === selectedCourseForSchedule)
+    if (!course) return
+    // Show teacher info
+    const teacher = allTeachers.find(t => t.name === course.teacher)
+    document.getElementById('schedTeacherName').innerHTML = '<strong>' + (course.teacher || '-') + '</strong>'
+    document.getElementById('schedTeacherPhone').textContent = '手機：' + (teacher ? (teacher.phone || '-') : '-')
+    document.getElementById('schedTeacherEmail').textContent = '郵箱：' + (teacher ? (teacher.email || '-') : '-')
+    document.getElementById('scheduleTeacherInfo').style.display = 'block'
+    // Load schedules for this course
+    loadSessionsForCourse()
+  }
+
+  async function loadSessionsForCourse() {
+    if (!selectedCourseForSchedule) return
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/schedules?course_id=eq.' + selectedCourseForSchedule + '&order=session_number.asc', {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+      })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      allSchedules = await res.json()
+      renderSessions()
+    } catch (err) { alert('載入排課失敗：' + err.message) }
+  }
+
+  function renderSessions() {
+    const course = allCourses.find(c => c.id === selectedCourseForSchedule)
+    if (!course) return
+    const total = parseInt(course.sessions) || 1
+    const tbody = document.getElementById('scheduleBody')
+    let html = ''
+    for (let i = 1; i <= total; i++) {
+      const sched = allSchedules.find(s => s.session_number === i)
+      const timeStr = sched && sched.start_time ? new Date(sched.start_time).toLocaleString('zh-HK') : ''
+      const schedId = sched ? sched.id : null
+      html += '<tr>'
+      html += '<td style="text-align:center;font-weight:500;">第' + i + '節</td>'
+      html += '<td id="schedTime_' + i + '">' + (timeStr || '<span style="color:#9ca3af;">未設定</span>') + '</td>'
+      html += '<td style="text-align:center;">'
+      if (schedId) {
+        html += '<span class="del-icon" onclick="editSessionTime(' + i + ',' + schedId + ')" title="編輯" style="color:#667eea;">📝</span>'
+      } else {
+        html += '<span class="del-icon" onclick="editSessionTime(' + i + ',null)" title="設定" style="color:#667eea;">📝</span>'
+      }
+      html += '</td>'
+      html += '</tr>'
+    }
+    tbody.innerHTML = html
+  }
+
+  function editSessionTime(sessionNum, schedId) {
+    const td = document.getElementById('schedTime_' + sessionNum)
+    const current = td.textContent.trim()
+    const now = new Date()
+    const defaultVal = current !== '未設定' && current ? new Date(current).toISOString().slice(0, 16) : now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + 'T' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0')
+    td.innerHTML = '<input type="datetime-local" id="schedInput_' + sessionNum + '" value="' + defaultVal + '" style="width:100%;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-family:inherit;font-size:0.9rem;box-sizing:border-box;">'
+    const input = document.getElementById('schedInput_' + sessionNum)
+    input.focus()
+    input.addEventListener('blur', function() { saveSessionTime(sessionNum, schedId) })
+    input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { input.blur() } })
+  }
+
+  async function saveSessionTime(sessionNum, schedId) {
+    const input = document.getElementById('schedInput_' + sessionNum)
+    if (!input) return
+    const val = input.value
+    if (!val) return
+    const startTime = new Date(val).toISOString()
+    try {
+      if (schedId) {
+        await apiFetch(SUPABASE_URL + '/rest/v1/schedules?id=eq.' + schedId, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+          body: JSON.stringify({ start_time: startTime }),
+        })
+      } else {
+        const res = await apiFetch(SUPABASE_URL + '/rest/v1/schedules', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken, 'Prefer': 'return=representation' },
+          body: JSON.stringify({ course_id: selectedCourseForSchedule, session_number: sessionNum, start_time: startTime }),
+        })
+        const newSched = await res.json()
+        // Update schedId for next save
+        schedId = newSched[0].id
+      }
+      await loadSessionsForCourse()
+    } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('保存失敗：' + err.message) }
+  }
+
   function isTokenExpired(session) {
     if (!session.expires_at) return false
     return Date.now() / 1000 > session.expires_at
@@ -1849,7 +2004,7 @@
       document.getElementById('loginPage').style.display = 'none'
       document.getElementById('navBar').style.display = 'flex'
       document.getElementById('adminPage').style.display = 'block'
-      await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses(), loadRegistrations(), loadAccounts()])
+      await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses(), loadRegistrations(), loadAccounts(), loadSessionsForCourse()])
     } catch (_) { localStorage.removeItem('supabase_session') }
   }
 

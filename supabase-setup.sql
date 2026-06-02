@@ -158,3 +158,18 @@ CREATE POLICY "auth_can_update" ON inquiries
 
 -- 如果你已经运行过上面的建表语句，只需运行下面这行添加回访列：
 -- ALTER TABLE inquiries ADD COLUMN follow_up TEXT;
+
+CREATE TABLE schedules (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  course_id BIGINT NOT NULL,
+  session_number INTEGER NOT NULL,
+  start_time TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE schedules ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "auth_select_schedules" ON schedules FOR SELECT TO authenticated USING (true);
+CREATE POLICY "auth_insert_schedules" ON schedules FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "auth_update_schedules" ON schedules FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "auth_delete_schedules" ON schedules FOR DELETE TO authenticated USING (true);
