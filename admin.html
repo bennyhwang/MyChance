@@ -2164,6 +2164,8 @@
       loadAttendanceForStudent()
     })
   }
+
+  function isTokenExpired(session) {
     if (!session.expires_at) return false
     return Date.now() / 1000 > session.expires_at
   }
