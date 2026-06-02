@@ -516,10 +516,11 @@
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
         <div>
           <h1 style="font-size:1.8rem;margin-bottom:0.3rem;">賬號管理</h1>
-          <p style="color:#6b7280;font-size:0.95rem;">為教务、老師、家長創建登錄賬號</p>
+          <p style="color:#6b7280;font-size:0.95rem;">管理所有登錄賬號</p>
         </div>
-        <button class="add-btn" onclick="openAddAccount()">+ 新建賬號</button>
+        <button class="add-btn" onclick="openAddAccount()">+ 新增賬號</button>
       </div>
+
       <div class="table-wrap">
         <table>
           <thead>
@@ -533,7 +534,7 @@
             </tr>
           </thead>
           <tbody id="accountBody">
-            <tr><td colspan="6" class="empty"><div class="icon">🔑</div><div>暫無賬號</div></td></tr>
+            <tr><td colspan="6" class="empty"><div class="icon">🔑</div><div>暫無賬號，點擊右上角新增</div></td></tr>
           </tbody>
         </table>
       </div>
@@ -794,14 +795,20 @@
   </div>
 </div>
 
-<!-- 新建賬號彈窗 -->
+<!-- 新增賬號彈窗 -->
 <div class="modal-overlay" id="accountModal">
   <div class="modal-box" style="max-width:480px;">
-    <h3>新建賬號</h3>
-    <p class="modal-sub">為教务 / 老師 / 家長創建登錄賬號</p>
-    <div class="form-group">
-      <label>用戶名 <span class="req">*</span></label>
-      <input type="text" id="a_username" placeholder="如：teacher01（字母+數字）">
+    <h3>新增賬號</h3>
+    <p class="modal-sub">請填寫賬號信息</p>
+    <div class="form-row">
+      <div class="form-group">
+        <label>用戶名 <span class="req">*</span></label>
+        <input type="text" id="a_username" placeholder="如：teacher01">
+      </div>
+      <div class="form-group">
+        <label>密碼 <span class="req">*</span></label>
+        <input type="text" id="a_password" placeholder="設置密碼">
+      </div>
     </div>
     <div class="form-group">
       <label>顯示名稱</label>
@@ -810,7 +817,7 @@
     <div class="form-row">
       <div class="form-group">
         <label>角色 <span class="req">*</span></label>
-        <select id="a_role" onchange="onAccountRoleChange()">
+        <select id="a_role">
           <option value="">請選擇</option>
           <option value="academic">教务</option>
           <option value="teacher">老師</option>
@@ -818,17 +825,9 @@
         </select>
       </div>
       <div class="form-group">
-        <label>密碼 <span class="req">*</span></label>
-        <input type="text" id="a_password" placeholder="設置密碼">
+        <label>關聯</label>
+        <input type="text" id="a_ref" placeholder="關聯 ID 或學生姓名">
       </div>
-    </div>
-    <div class="form-group" id="a_ref_group" style="display:none;">
-      <label id="a_ref_label">關聯老師</label>
-      <select id="a_ref_id"></select>
-    </div>
-    <div class="form-group" id="a_child_group" style="display:none;">
-      <label>關聯學生（家長使用）</label>
-      <input type="text" id="a_child_name" placeholder="如：陳小明">
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeAddAccount()">放棄</button>
@@ -1024,21 +1023,21 @@
       if (!res.ok) throw new Error('HTTP ' + res.status)
       allAccounts = await res.json()
       renderAccounts()
-    } catch (err) { alert('載入賬號失敗：' + err.message) }
+    } catch (err) { alert('載入賬號列表失敗：' + err.message) }
   }
 
   function renderAccounts() {
     const roleMap = { academic: '教务', teacher: '老師', parent: '家長' }
     const tbody = document.getElementById('accountBody')
     if (allAccounts.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="icon">🔑</div><div>暫無賬號</div></td></tr>'
+      tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="icon">🔑</div><div>暫無賬號，點擊右上角新增</div></td></tr>'
       return
     }
     tbody.innerHTML = allAccounts.map(a => `
       <tr>
         <td>${a.username}</td>
         <td>${a.display_name || '-'}</td>
-        <td><span class="tag tag-${a.role}">${roleMap[a.role] || a.role}</span></td>
+        <td>${roleMap[a.role] || a.role}</td>
         <td>${a.ref_id ? 'ID:' + a.ref_id : (a.child_name || '-')}</td>
         <td style="white-space:nowrap;">${new Date(a.created_at).toLocaleString('zh-HK')}</td>
         <td style="text-align:center;"><span class="del-icon" onclick="deleteAccount(${a.id})" title="刪除" style="color:#f5576c;">🗑️</span></td>
@@ -1047,14 +1046,11 @@
   }
 
   function openAddAccount() {
-    document.getElementById('a_username').value = ''
-    document.getElementById('a_display_name').value = ''
-    document.getElementById('a_password').value = ''
+    ['a_username','a_password','a_display_name','a_ref'].forEach(id => {
+      const el = document.getElementById(id)
+      if (el) { if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = '' }
+    })
     document.getElementById('a_role').selectedIndex = 0
-    document.getElementById('a_ref_group').style.display = 'none'
-    document.getElementById('a_child_group').style.display = 'none'
-    document.getElementById('a_ref_id').innerHTML = '<option value="">請選擇</option>'
-    document.getElementById('a_child_name').value = ''
     document.getElementById('accountModal').classList.add('show')
     setTimeout(() => document.getElementById('a_username').focus(), 100)
   }
@@ -1063,45 +1059,32 @@
     document.getElementById('accountModal').classList.remove('show')
   }
 
-  function onAccountRoleChange() {
-    const role = document.getElementById('a_role').value
-    document.getElementById('a_ref_group').style.display = role === 'teacher' ? 'block' : 'none'
-    document.getElementById('a_child_group').style.display = role === 'parent' ? 'block' : 'none'
-    document.getElementById('a_ref_label').textContent = role === 'teacher' ? '關聯老師' : '關聯對象'
-    if (role === 'teacher') {
-      const sel = document.getElementById('a_ref_id')
-      sel.innerHTML = '<option value="">請選擇老師</option>'
-      allTeachers.forEach(t => {
-        sel.innerHTML += '<option value="' + t.id + '">' + t.name + '</option>'
-      })
-    }
-  }
-
   async function saveAccount() {
     const username = document.getElementById('a_username').value.trim()
     const password = document.getElementById('a_password').value.trim()
     const role = document.getElementById('a_role').value
-    if (!username) { alert('請輸入用戶名'); return }
-    if (!password) { alert('請設置密碼'); return }
+    if (!username) { alert('請輸入用戶名'); document.getElementById('a_username').focus(); return }
+    if (!password) { alert('請設置密碼'); document.getElementById('a_password').focus(); return }
     if (!role) { alert('請選擇角色'); return }
     const btn = document.getElementById('saveAccountBtn')
     btn.disabled = true; btn.textContent = '保存中...'
+    const ref = document.getElementById('a_ref').value.trim()
     const payload = {
       username,
       password_hash: password,
       role,
       display_name: document.getElementById('a_display_name').value.trim() || null,
-      ref_id: role === 'teacher' ? (document.getElementById('a_ref_id').value || null) : null,
-      child_name: role === 'parent' ? (document.getElementById('a_child_name').value.trim() || null) : null,
+      ref_id: role === 'teacher' ? (ref || null) : null,
+      child_name: role === 'parent' ? (ref || null) : null,
     }
     try {
       await apiFetch(SUPABASE_URL + '/rest/v1/accounts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken },
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken, 'Prefer': 'return=representation' },
         body: JSON.stringify(payload),
       })
       closeAddAccount()
-      if (document.getElementById('accountsView').classList.contains('active')) await loadAccounts()
+      await loadAccounts()
     } catch (err) { if (err.message !== 'SESSION_EXPIRED') alert('保存失敗：' + err.message) }
     btn.disabled = false; btn.textContent = '確認保存'
   }
