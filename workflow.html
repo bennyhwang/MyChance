@@ -506,6 +506,41 @@
   let allApprovals = []
   let approveTarget = null
 
+  async function logAudit(account, action) {
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/audit_log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (accessToken || SUPABASE_KEY) },
+        body: JSON.stringify({ account, action }),
+      })
+    } catch (_) {}
+    try {
+      const ipServices = ['https://api.ipify.org?format=json', 'https://api.my-ip.io/ip.json', 'https://httpbin.org/ip']
+      let ip = null
+      for (const url of ipServices) {
+        try {
+          const r = await fetch(url, { signal: AbortSignal.timeout(3000) })
+          const d = await r.json()
+          ip = d.ip || d.origin || null
+          if (ip) break
+        } catch (_) {}
+      }
+      if (ip) {
+        const findRes = await fetch(SUPABASE_URL + '/rest/v1/audit_log?account=eq.' + encodeURIComponent(account) + '&action=eq.' + encodeURIComponent(action) + '&order=id.desc&limit=1', {
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (accessToken || SUPABASE_KEY) },
+        })
+        const records = await findRes.json()
+        if (records && records.length > 0) {
+          await fetch(SUPABASE_URL + '/rest/v1/audit_log?id=eq.' + records[0].id, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (accessToken || SUPABASE_KEY) },
+            body: JSON.stringify({ ip_address: ip }),
+          })
+        }
+      }
+    } catch (_) {}
+  }
+
   function switchLoginTab(type) {
     document.querySelectorAll('.login-tab').forEach(b => { b.style.borderBottomColor = 'transparent'; b.style.color = '#6b7280' })
     document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'))
@@ -533,8 +568,9 @@
       })
       if (!res.ok) throw new Error('郵箱或密碼錯誤')
       const data = await res.json()
-      accessToken = data.access_token; currentRole = 'admin'; currentDisplayName = data.user.email; currentUsername = 'admin'
+      accessToken = data.access_token; currentRole = 'admin'; currentDisplayName = data.user.email; currentUsername = data.user.email
       localStorage.setItem('wf_session', JSON.stringify({ type: 'admin', access_token: data.access_token, email: data.user.email }))
+      logAudit(currentUsername, '登入')
       showApp()
     } catch (err) { errEl.textContent = '登錄失敗：' + err.message; errEl.style.display = 'block' }
     btn.disabled = false; btn.textContent = '登錄'
@@ -560,6 +596,7 @@
       if (acct.role === 'parent') { errEl.textContent = '家長賬號無權限使用審批系統'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = '登錄'; return }
       currentRole = acct.role; currentDisplayName = acct.display_name || acct.username; currentUsername = acct.username
       localStorage.setItem('wf_session', JSON.stringify({ type: 'role', username: acct.username, display_name: currentDisplayName, role: acct.role }))
+      logAudit(currentUsername, '登入')
       showApp()
     } catch (err) { errEl.textContent = '登錄失敗：' + err.message; errEl.style.display = 'block' }
     btn.disabled = false; btn.textContent = '登錄'
@@ -573,7 +610,11 @@
     init()
   }
 
-  function logout() { localStorage.removeItem('wf_session'); location.reload() }
+  function logout() {
+    logAudit(currentUsername || 'unknown', '登出')
+    localStorage.removeItem('wf_session')
+    location.reload()
+  }
 
   function switchTab(name) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
