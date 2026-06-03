@@ -28,7 +28,7 @@ serve(async (req) => {
     }
     const displayName = parent_name || '家長'
     await transporter.sendMail({
-      from: `"佳思教育" <${SMTP_USER}>`,
+      from: '佳思教育 <' + SMTP_USER + '>',
       to: email,
       subject: '收到您的諮詢 - 佳思教育 Joy n Think',
       html: `<div style="font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;max-width:600px;margin:0 auto;padding:30px;background:#f8f9ff;border-radius:16px;">
