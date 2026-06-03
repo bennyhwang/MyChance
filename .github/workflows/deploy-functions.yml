@@ -3,7 +3,7 @@ name: Deploy Edge Functions
 on:
   push:
     branches: [main]
-    paths: ['supabase/**']
+    paths: ['supabase/**', '.github/workflows/**']
 
 jobs:
   deploy:
