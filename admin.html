@@ -1464,8 +1464,9 @@
   function openAddTeacher() {
     editingId = null
     document.getElementById('teacherModalTitle').textContent = '新增老師'
-    ['t_name','t_english_name','t_gender','t_age','t_qualification','t_achievement','t_specialty','t_start_date','t_subject','t_phone','t_email'].forEach(id => {
+    ;['t_name','t_english_name','t_gender','t_age','t_qualification','t_achievement','t_specialty','t_start_date','t_subject','t_phone','t_email'].forEach(id => {
       const el = document.getElementById(id)
+      if (!el) return
       if (el.tagName === 'SELECT') el.selectedIndex = 0
       else el.value = ''
     })
@@ -1589,7 +1590,7 @@
   function openAddStudent() {
     editingId = null
     document.getElementById('studentModalTitle').textContent = '新增學生'
-    ['s_name','s_english_name','s_gender','s_age','s_parent_name','s_school','s_grade','s_start_date','s_parent_phone','s_parent_email'].forEach(id => {
+    ;['s_name','s_english_name','s_gender','s_age','s_parent_name','s_school','s_grade','s_start_date','s_parent_phone','s_parent_email'].forEach(id => {
       const el = document.getElementById(id)
       if (el.tagName === 'SELECT') el.selectedIndex = 0
       else el.value = ''
