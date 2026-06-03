@@ -203,3 +203,5 @@ ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "auth_select_audit_log" ON audit_log FOR SELECT TO authenticated USING (true);
 CREATE POLICY "auth_insert_audit_log" ON audit_log FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "anon_insert_audit_log" ON audit_log FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "auth_update_audit_log" ON audit_log FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
