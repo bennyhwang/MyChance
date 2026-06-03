@@ -935,6 +935,19 @@
   let accessToken = null
   let editingId = null
 
+  async function logAudit(account, action) {
+    try {
+      const ipRes = await fetch('https://api.ipify.org?format=json')
+      const ipData = await ipRes.json()
+      const ip = ipData.ip || null
+      await fetch(SUPABASE_URL + '/rest/v1/audit_log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (accessToken || SUPABASE_KEY) },
+        body: JSON.stringify({ account, action, ip_address: ip }),
+      })
+    } catch (_) {}
+  }
+
   async function login() {
     const email = document.getElementById('loginEmail').value.trim()
     const password = document.getElementById('loginPassword').value
@@ -958,6 +971,7 @@
       document.getElementById('navBar').style.display = 'flex'
       document.getElementById('adminPage').style.display = 'block'
       await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses(), loadRegistrations(), loadAccounts()])
+      logAudit(data.user.email, '登入')
     } catch (_) {
       const errEl = document.getElementById('loginError')
       errEl.style.display = 'block'
@@ -966,6 +980,8 @@
   }
 
   function logout() {
+    const email = document.getElementById('userEmail').textContent
+    if (email) logAudit(email, '登出')
     accessToken = null
     localStorage.removeItem('supabase_session')
     localStorage.removeItem('role_session')
@@ -1033,6 +1049,7 @@
       document.getElementById('adminPage').style.display = 'block'
       applyRoleRestrictions()
       await loadRoleData(session)
+      logAudit(acct.username, '登入')
     } catch (err) {
       errEl.textContent = '登錄失敗：' + err.message
       errEl.style.display = 'block'

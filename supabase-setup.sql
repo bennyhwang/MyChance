@@ -190,3 +190,16 @@ CREATE POLICY "auth_select_attendance" ON attendance FOR SELECT TO authenticated
 CREATE POLICY "auth_insert_attendance" ON attendance FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "auth_update_attendance" ON attendance FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "auth_delete_attendance" ON attendance FOR DELETE TO authenticated USING (true);
+
+CREATE TABLE audit_log (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  account TEXT NOT NULL,
+  action TEXT NOT NULL,
+  time TIMESTAMPTZ DEFAULT NOW(),
+  ip_address TEXT
+);
+
+ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "auth_select_audit_log" ON audit_log FOR SELECT TO authenticated USING (true);
+CREATE POLICY "auth_insert_audit_log" ON audit_log FOR INSERT TO authenticated WITH CHECK (true);
