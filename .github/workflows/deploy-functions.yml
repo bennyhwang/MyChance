@@ -16,3 +16,6 @@ jobs:
       - run: supabase functions deploy send-confirmation --project-ref fuuwjceawowojecaqfru
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - run: supabase secrets set SMTP_USER="${{ secrets.SMTP_USER }}" SMTP_PASS="${{ secrets.SMTP_PASS }}" --project-ref fuuwjceawowojecaqfru
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
