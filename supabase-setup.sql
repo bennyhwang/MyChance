@@ -205,3 +205,56 @@ CREATE POLICY "auth_select_audit_log" ON audit_log FOR SELECT TO authenticated U
 CREATE POLICY "auth_insert_audit_log" ON audit_log FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "anon_insert_audit_log" ON audit_log FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "auth_update_audit_log" ON audit_log FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+
+-- ============ 財務系統 ============
+
+CREATE TABLE finance_categories (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+  sort_order INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO finance_categories (name, type, sort_order) VALUES
+  ('學費收入', 'income', 1),
+  ('教材費', 'income', 2),
+  ('其他收入', 'income', 99),
+  ('老師薪資', 'expense', 1),
+  ('房租', 'expense', 2),
+  ('水電費', 'expense', 3),
+  ('行銷費用', 'expense', 4),
+  ('辦公用品', 'expense', 5),
+  ('其他支出', 'expense', 99);
+
+ALTER TABLE finance_categories ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "all_finance_categories" ON finance_categories FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "anon_select_finance_categories" ON finance_categories FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_insert_finance_categories" ON finance_categories FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_update_finance_categories" ON finance_categories FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_delete_finance_categories" ON finance_categories FOR DELETE TO anon USING (true);
+
+CREATE TABLE finance_transactions (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+  category_id BIGINT REFERENCES finance_categories(id),
+  amount DECIMAL(12,2) NOT NULL,
+  description TEXT,
+  payment_method TEXT,
+  reference_number TEXT,
+  related_type TEXT,
+  related_id BIGINT,
+  transaction_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_by TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE finance_transactions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "all_finance_transactions" ON finance_transactions FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "anon_select_finance_transactions" ON finance_transactions FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_insert_finance_transactions" ON finance_transactions FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_update_finance_transactions" ON finance_transactions FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_delete_finance_transactions" ON finance_transactions FOR DELETE TO anon USING (true);
