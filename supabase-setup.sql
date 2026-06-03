@@ -258,3 +258,49 @@ CREATE POLICY "anon_select_finance_transactions" ON finance_transactions FOR SEL
 CREATE POLICY "anon_insert_finance_transactions" ON finance_transactions FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon_update_finance_transactions" ON finance_transactions FOR UPDATE TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "anon_delete_finance_transactions" ON finance_transactions FOR DELETE TO anon USING (true);
+
+-- ============ 審批流程系統 ============
+
+CREATE TABLE workflow_requests (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  amount DECIMAL(12,2),
+  start_date DATE,
+  end_date DATE,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  current_step INT DEFAULT 1,
+  max_steps INT NOT NULL,
+  submitted_by TEXT NOT NULL,
+  submitted_by_role TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE workflow_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "all_workflow_requests" ON workflow_requests FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "anon_select_workflow_requests" ON workflow_requests FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_insert_workflow_requests" ON workflow_requests FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_update_workflow_requests" ON workflow_requests FOR UPDATE TO anon USING (true) WITH CHECK (true);
+
+CREATE TABLE workflow_approvals (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  request_id BIGINT REFERENCES workflow_requests(id) ON DELETE CASCADE,
+  step_number INT NOT NULL,
+  approver_role TEXT NOT NULL,
+  approver_name TEXT,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  comment TEXT,
+  acted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE workflow_approvals ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "all_workflow_approvals" ON workflow_approvals FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "anon_select_workflow_approvals" ON workflow_approvals FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_insert_workflow_approvals" ON workflow_approvals FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon_update_workflow_approvals" ON workflow_approvals FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "anon_delete_workflow_approvals" ON workflow_approvals FOR DELETE TO anon USING (true);

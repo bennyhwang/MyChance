@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>審批流程 - 佳思教育</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans SC', -apple-system, sans-serif; color: #1a1a2e; background: #f8f9ff; }
+    nav {
+      background: rgba(15,12,41,0.95);
+      backdrop-filter: blur(20px);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    nav .logo { display: flex; align-items: center; gap: 0.5rem; color: #fff; font-size: 1.4rem; font-weight: 900; text-decoration: none; }
+    nav .nav-right { display: flex; align-items: center; gap: 1rem; }
+    nav .nav-right span { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
+    .logout-btn {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-family: inherit;
+      transition: all 0.3s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.2); }
+    .back-btn {
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-family: inherit;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+    .page-content { padding: 6rem 2rem 3rem; max-width: 1200px; margin: 0 auto; }
+
+    .tab-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 0;
+    }
+    .tab-btn {
+      padding: 0.7rem 1.5rem;
+      border: none;
+      background: none;
+      font-size: 1rem;
+      font-weight: 500;
+      font-family: inherit;
+      color: #6b7280;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.3s;
+    }
+    .tab-btn:hover { color: #374151; }
+    .tab-btn.active { color: #667eea; border-bottom-color: #667eea; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .header-row h1 { font-size: 1.8rem; margin-bottom: 0.3rem; }
+    .header-row p { color: #6b7280; font-size: 0.95rem; }
+
+    .add-btn {
+      padding: 0.6rem 1.5rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.3s;
+    }
+    .add-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.35); }
+
+    .filter-bar { display: flex; gap: 0.8rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; }
+    .filter-bar input, .filter-bar select {
+      padding: 0.5rem 0.8rem;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+    }
+    .filter-bar input:focus, .filter-bar select:focus { border-color: #667eea; }
+
+    .table-wrap {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+      overflow-x: auto;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th {
+      background: #f9fafb;
+      padding: 0.8rem 0.7rem;
+      text-align: left;
+      color: #6b7280;
+      font-weight: 500;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 2px solid #f3f4f6;
+    }
+    td {
+      padding: 0.8rem 0.7rem;
+      border-bottom: 1px solid #f3f4f6;
+      color: #4a4a6a;
+    }
+    tr:hover td { background: #f8f9ff; }
+    .empty { text-align: center; padding: 4rem 2rem; color: #9ca3af; }
+    .empty .icon { font-size: 3rem; margin-bottom: 1rem; }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.2rem 0.7rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-approved { background: #d1fae5; color: #065f46; }
+    .status-rejected { background: #fee2e2; color: #991b1b; }
+
+    .action-link {
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #667eea;
+      text-decoration: none;
+      margin-right: 0.5rem;
+    }
+    .action-link:hover { text-decoration: underline; }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15,12,41,0.75);
+      backdrop-filter: blur(6px);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: 20px;
+      padding: 2rem 2rem 1.5rem;
+      width: 90%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-box h3 { font-size: 1.4rem; margin-bottom: 0.2rem; }
+    .modal-sub { color: #6b7280; font-size: 0.85rem; margin-bottom: 1.5rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 500; color: #374151; margin-bottom: 0.3rem; }
+    .form-group label .req { color: #dc2626; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #667eea; }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+    .form-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .form-row .form-group { flex: 1; min-width: 140px; }
+    .modal-actions { display: flex; gap: 0.8rem; justify-content: flex-end; margin-top: 1.5rem; }
+    .btn-cancel {
+      padding: 0.6rem 1.5rem;
+      background: #f3f4f6;
+      color: #374151;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+    .btn-save {
+      padding: 0.6rem 1.5rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: all 0.3s;
+    }
+    .btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.35); }
+    .btn-save:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-danger {
+      padding: 0.6rem 1.5rem;
+      background: #dc2626;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: all 0.3s;
+    }
+    .btn-danger:hover { background: #b91c1c; }
+
+    .timeline { margin: 1.5rem 0; }
+    .timeline-item {
+      display: flex;
+      gap: 1rem;
+      padding-bottom: 1.2rem;
+      position: relative;
+    }
+    .timeline-item:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 14px;
+      top: 32px;
+      bottom: 0;
+      width: 2px;
+      background: #e5e7eb;
+    }
+    .timeline-dot {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+    .timeline-dot.pending { background: #fef3c7; color: #92400e; }
+    .timeline-dot.approved { background: #d1fae5; color: #065f46; }
+    .timeline-dot.rejected { background: #fee2e2; color: #991b1b; }
+    .timeline-dot.current { background: #667eea; color: #fff; }
+    .timeline-content { flex: 1; }
+    .timeline-content .step-label { font-weight: 600; font-size: 0.9rem; }
+    .timeline-content .step-info { font-size: 0.82rem; color: #6b7280; }
+    .timeline-content .step-comment { font-size: 0.85rem; color: #374151; margin-top: 0.3rem; background: #f9fafb; padding: 0.5rem 0.8rem; border-radius: 8px; }
+
+    .detail-section { margin-bottom: 1.2rem; }
+    .detail-section .label { font-size: 0.8rem; color: #6b7280; }
+    .detail-section .value { font-size: 0.95rem; color: #1a1a2e; font-weight: 500; }
+
+    #loginPage {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    }
+    .login-box {
+      background: #fff;
+      border-radius: 24px;
+      padding: 3rem;
+      width: 90%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .login-box h1 { text-align: center; font-size: 1.8rem; margin-bottom: 0.3rem; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .login-box .sub { text-align: center; color: #6b7280; font-size: 0.9rem; margin-bottom: 2rem; }
+    .login-tabs { display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 1.5rem; }
+    .login-tab {
+      flex: 1;
+      text-align: center;
+      padding: 0.7rem;
+      cursor: pointer;
+      color: #6b7280;
+      font-size: 0.9rem;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.3s;
+    }
+    .login-form { display: none; }
+    .login-form.active { display: block; }
+    .login-form .form-group { margin-bottom: 1.2rem; }
+    .login-form .form-group label { font-size: 0.85rem; color: #374151; font-weight: 500; margin-bottom: 0.3rem; display: block; }
+    .login-form .form-group input {
+      width: 100%;
+      padding: 0.7rem 0.9rem;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+    }
+    .login-form .form-group input:focus { border-color: #667eea; }
+    .login-form .login-btn {
+      width: 100%;
+      padding: 0.7rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.3s;
+    }
+    .login-form .login-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+    .login-form .login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .login-error { color: #dc2626; font-size: 0.85rem; text-align: center; margin-top: 0.8rem; display: none; }
+  </style>
+</head>
+<body>
+
+<div id="loginPage">
+  <div class="login-box">
+    <h1>佳思教育</h1>
+    <p class="sub">審批流程系統</p>
+    <div class="login-tabs">
+      <div class="login-tab" id="loginTabAdmin" style="border-bottom-color:#667eea;color:#667eea;" onclick="switchLoginTab('admin')">管理員</div>
+      <div class="login-tab" id="loginTabRole" onclick="switchLoginTab('role')">身份登錄</div>
+    </div>
+    <div class="login-form active" id="adminLoginForm">
+      <div class="form-group"><label>郵箱</label><input type="email" id="loginEmail" value="hwangbin@gmail.com" placeholder="管理員郵箱"></div>
+      <div class="form-group"><label>密碼</label><input type="password" id="loginPassword" placeholder="Supabase Auth 密碼"></div>
+      <button class="login-btn" id="loginBtn" onclick="login()">登錄</button>
+      <div class="login-error" id="loginError"></div>
+    </div>
+    <div class="login-form" id="roleLoginForm">
+      <div class="form-group"><label>用戶名</label><input type="text" id="loginUsername" placeholder="後台創建的賬號用戶名"></div>
+      <div class="form-group"><label>密碼</label><input type="password" id="loginRolePassword" placeholder="賬號密碼"></div>
+      <button class="login-btn" id="loginRoleBtn" onclick="loginRole()">登錄</button>
+      <div class="login-error" id="loginRoleError"></div>
+    </div>
+  </div>
+</div>
+
+<nav id="navBar" style="display:none;">
+  <a class="logo" href="index.html"><span>佳思教育</span></a>
+  <div class="nav-right">
+    <span id="userInfo"></span>
+    <a class="back-btn" href="admin.html">返回管理後台</a>
+    <button class="logout-btn" onclick="logout()">登出</button>
+  </div>
+</nav>
+
+<div id="workflowPage" style="display:none;">
+  <div class="page-content">
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('my')">我的申請</button>
+      <button class="tab-btn" onclick="switchTab('pending')">待我審批</button>
+      <button class="tab-btn" onclick="switchTab('all')">全部申請</button>
+    </div>
+
+    <div id="myView" class="view active">
+      <div class="header-row">
+        <div><h1>我的申請</h1><p>提交和跟進你的申請</p></div>
+        <button class="add-btn" onclick="openNewRequest()">+ 提交申請</button>
+      </div>
+      <div class="filter-bar">
+        <select id="myTypeFilter" onchange="renderMy()"><option value="">全部類型</option><option value="請假">請假</option><option value="報銷">報銷</option><option value="其他">其他</option></select>
+        <select id="myStatusFilter" onchange="renderMy()"><option value="">全部狀態</option><option value="pending">審批中</option><option value="approved">已通過</option><option value="rejected">已駁回</option></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>類型</th><th>標題</th><th>狀態</th><th>當前步驟</th><th>提交時間</th><th>操作</th></tr></thead>
+          <tbody id="myBody"><tr><td colspan="6" class="empty"><div class="icon">📋</div><div>暫無申請</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="pendingView" class="view">
+      <div class="header-row">
+        <div><h1>待我審批</h1><p>需要你處理的審批事項</p></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>類型</th><th>標題</th><th>提交人</th><th>步驟</th><th>提交時間</th><th>操作</th></tr></thead>
+          <tbody id="pendingBody"><tr><td colspan="6" class="empty"><div class="icon">✅</div><div>暫無待審批事項</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="allView" class="view">
+      <div class="header-row">
+        <div><h1>全部申請</h1><p>查看所有申請記錄</p></div>
+      </div>
+      <div class="filter-bar">
+        <select id="allTypeFilter" onchange="renderAll()"><option value="">全部類型</option><option value="請假">請假</option><option value="報銷">報銷</option><option value="其他">其他</option></select>
+        <select id="allStatusFilter" onchange="renderAll()"><option value="">全部狀態</option><option value="pending">審批中</option><option value="approved">已通過</option><option value="rejected">已駁回</option></select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>類型</th><th>標題</th><th>提交人</th><th>角色</th><th>狀態</th><th>提交時間</th><th>操作</th></tr></thead>
+          <tbody id="allBody"><tr><td colspan="7" class="empty"><div class="icon">📂</div><div>暫無申請記錄</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="newRequestModal">
+  <div class="modal-box">
+    <h3>提交申請</h3>
+    <p class="modal-sub">填寫申請信息</p>
+    <div class="form-group">
+      <label>申請類型 <span class="req">*</span></label>
+      <select id="req_type" onchange="onReqTypeChange()"><option value="">請選擇</option><option value="請假">請假</option><option value="報銷">報銷</option><option value="其他">其他</option></select>
+    </div>
+    <div class="form-group">
+      <label>標題 <span class="req">*</span></label>
+      <input type="text" id="req_title" placeholder="簡要描述申請事項">
+    </div>
+    <div class="form-group" id="reqAmountGroup" style="display:none;">
+      <label>金額 (HK$) <span class="req">*</span></label>
+      <input type="number" id="req_amount" step="0.01" min="0" placeholder="0.00">
+    </div>
+    <div class="form-row" id="reqDateGroup" style="display:none;">
+      <div class="form-group">
+        <label>開始日期 <span class="req">*</span></label>
+        <input type="date" id="req_start_date">
+      </div>
+      <div class="form-group">
+        <label>結束日期 <span class="req">*</span></label>
+        <input type="date" id="req_end_date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>詳細說明</label>
+      <textarea id="req_description" placeholder="請詳細描述申請原因"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeNewRequest()">取消</button>
+      <button class="btn-save" id="submitReqBtn" onclick="submitRequest()">提交</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-box">
+    <h3 id="detailTitle">申請詳情</h3>
+    <p class="modal-sub" id="detailSub"></p>
+    <div id="detailContent"></div>
+    <div id="detailTimeline"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeDetail()">關閉</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="approveModal">
+  <div class="modal-box">
+    <h3>審批處理</h3>
+    <p class="modal-sub" id="approveSub"></p>
+    <div id="approveDetail"></div>
+    <div class="form-group">
+      <label>審批意見</label>
+      <textarea id="approveComment" placeholder="請輸入意見（可選）"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeApprove()">取消</button>
+      <button class="btn-danger" id="rejectBtn" onclick="doApprove('rejected')">駁回</button>
+      <button class="btn-save" id="approveBtn" onclick="doApprove('approved')">通過</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://fuuwjceawowojecaqfru.supabase.co'
+  const SUPABASE_KEY = 'sb_publishable_M3lmOrr1QDDkkKE3r9q7qQ_mVnLlYtQ'
+
+  const STEP_CONFIG = {
+    '請假': [{ role: 'academic', label: '教務審批' }, { role: 'admin', label: '管理員審批' }],
+    '報銷': [{ role: 'admin', label: '管理員審批' }],
+    '其他': [{ role: 'academic', label: '教務審批' }, { role: 'admin', label: '管理員審批' }],
+  }
+
+  let accessToken = null
+  let currentRole = null
+  let currentDisplayName = null
+  let currentUsername = null
+  let allRequests = []
+  let allApprovals = []
+  let approveTarget = null
+
+  function switchLoginTab(type) {
+    document.querySelectorAll('.login-tab').forEach(b => { b.style.borderBottomColor = 'transparent'; b.style.color = '#6b7280' })
+    document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'))
+    if (type === 'admin') {
+      document.getElementById('loginTabAdmin').style.borderBottomColor = '#667eea'; document.getElementById('loginTabAdmin').style.color = '#667eea'
+      document.getElementById('adminLoginForm').classList.add('active')
+    } else {
+      document.getElementById('loginTabRole').style.borderBottomColor = '#667eea'; document.getElementById('loginTabRole').style.color = '#667eea'
+      document.getElementById('roleLoginForm').classList.add('active')
+    }
+  }
+
+  async function login() {
+    const email = document.getElementById('loginEmail').value.trim()
+    const password = document.getElementById('loginPassword').value
+    const btn = document.getElementById('loginBtn'); const errEl = document.getElementById('loginError')
+    errEl.style.display = 'none'
+    if (!email || !password) { errEl.textContent = '請輸入郵箱和密碼'; errEl.style.display = 'block'; return }
+    btn.disabled = true; btn.textContent = '登錄中...'
+    try {
+      const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      if (!res.ok) throw new Error('郵箱或密碼錯誤')
+      const data = await res.json()
+      accessToken = data.access_token; currentRole = 'admin'; currentDisplayName = data.user.email; currentUsername = 'admin'
+      localStorage.setItem('wf_session', JSON.stringify({ type: 'admin', access_token: data.access_token, email: data.user.email }))
+      showApp()
+    } catch (err) { errEl.textContent = '登錄失敗：' + err.message; errEl.style.display = 'block' }
+    btn.disabled = false; btn.textContent = '登錄'
+  }
+
+  async function loginRole() {
+    const username = document.getElementById('loginUsername').value.trim()
+    const password = document.getElementById('loginRolePassword').value
+    const btn = document.getElementById('loginRoleBtn'); const errEl = document.getElementById('loginRoleError')
+    errEl.style.display = 'none'
+    if (!username || !password) { errEl.textContent = '請輸入用戶名和密碼'; errEl.style.display = 'block'; return }
+    btn.disabled = true; btn.textContent = '登錄中...'
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/login_account', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_username: username, p_password: password }),
+      })
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      const result = await res.json()
+      if (!result || result.length === 0) { errEl.textContent = '用戶名或密碼錯誤'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = '登錄'; return }
+      const acct = result[0]
+      if (acct.role === 'parent') { errEl.textContent = '家長賬號無權限使用審批系統'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = '登錄'; return }
+      currentRole = acct.role; currentDisplayName = acct.display_name || acct.username; currentUsername = acct.username
+      localStorage.setItem('wf_session', JSON.stringify({ type: 'role', username: acct.username, display_name: currentDisplayName, role: acct.role }))
+      showApp()
+    } catch (err) { errEl.textContent = '登錄失敗：' + err.message; errEl.style.display = 'block' }
+    btn.disabled = false; btn.textContent = '登錄'
+  }
+
+  function showApp() {
+    document.getElementById('loginPage').style.display = 'none'
+    document.getElementById('navBar').style.display = 'flex'
+    document.getElementById('workflowPage').style.display = 'block'
+    document.getElementById('userInfo').textContent = currentRole === 'admin' ? '管理員' : currentDisplayName
+    init()
+  }
+
+  function logout() { localStorage.removeItem('wf_session'); location.reload() }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
+    const tabs = { my: 0, pending: 1, all: 2 }
+    document.querySelectorAll('.tab-btn')[tabs[name]].classList.add('active')
+    document.getElementById(name + 'View').classList.add('active')
+    if (name === 'pending') renderPending()
+    if (name === 'all') renderAll()
+  }
+
+  function authHeaders() {
+    const h = { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' }
+    if (currentRole === 'admin' && accessToken) h['Authorization'] = 'Bearer ' + accessToken
+    else h['Authorization'] = 'Bearer ' + SUPABASE_KEY
+    return h
+  }
+
+  async function apiFetch(url, opts = {}) {
+    const res = await fetch(url, opts)
+    if (res.status === 401) { alert('登錄已過期'); logout(); throw new Error('UNAUTHORIZED') }
+    if (!res.ok) throw new Error('HTTP ' + res.status)
+    return res
+  }
+
+  async function init() {
+    await Promise.all([loadRequests(), loadApprovals()])
+    renderMy()
+    renderPending()
+    renderAll()
+  }
+
+  async function loadRequests() {
+    const res = await apiFetch(SUPABASE_URL + '/rest/v1/workflow_requests?order=created_at.desc', { headers: authHeaders() })
+    allRequests = await res.json()
+  }
+
+  async function loadApprovals() {
+    const res = await apiFetch(SUPABASE_URL + '/rest/v1/workflow_approvals?order=step_number.asc', { headers: authHeaders() })
+    allApprovals = await res.json()
+  }
+
+  function stepLabel(req) {
+    const steps = STEP_CONFIG[req.type] || []
+    if (req.status === 'approved') return '已完成'
+    if (req.status === 'rejected') return '已駁回'
+    const idx = req.current_step - 1
+    return steps[idx] ? steps[idx].label : '-'
+  }
+
+  function roleLabel(r) { return { admin: '管理員', academic: '教務', teacher: '老師', parent: '家長' }[r] || r }
+
+  function filterRequests(list) {
+    if (currentRole === 'admin') return list
+    return list.filter(r => r.submitted_by === currentUsername)
+  }
+
+  function renderMy() {
+    const typeF = document.getElementById('myTypeFilter').value
+    const statusF = document.getElementById('myStatusFilter').value
+    let list = allRequests.filter(r => r.submitted_by === currentUsername)
+    if (typeF) list = list.filter(r => r.type === typeF)
+    if (statusF) list = list.filter(r => r.status === statusF)
+    document.getElementById('myBody').innerHTML = list.length ? list.map(r => `
+      <tr>
+        <td><span class="status-badge" style="background:#e0e7ff;color:#4338ca;">${r.type}</span></td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.title}</td>
+        <td><span class="status-badge status-${r.status}">${{ pending: '審批中', approved: '已通過', rejected: '已駁回' }[r.status]}</span></td>
+        <td>${stepLabel(r)}</td>
+        <td style="font-size:0.82rem;">${r.created_at ? r.created_at.slice(0, 16).replace('T', ' ') : '-'}</td>
+        <td><span class="action-link" onclick="viewDetail(${r.id})">查看</span></td>
+      </tr>`).join('') : '<tr><td colspan="6" class="empty"><div class="icon">📋</div><div>暫無申請</div></td></tr>'
+  }
+
+  function renderPending() {
+    let list = allRequests.filter(r => r.status === 'pending')
+    if (currentRole !== 'admin') {
+      const steps = STEP_CONFIG
+      list = list.filter(r => {
+        const s = steps[r.type]
+        return s && s[r.current_step - 1] && s[r.current_step - 1].role === currentRole
+      })
+    }
+    document.getElementById('pendingBody').innerHTML = list.length ? list.map(r => `
+      <tr>
+        <td><span class="status-badge" style="background:#e0e7ff;color:#4338ca;">${r.type}</span></td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.title}</td>
+        <td>${r.submitted_by}</td>
+        <td>${stepLabel(r)}</td>
+        <td style="font-size:0.82rem;">${r.created_at ? r.created_at.slice(0, 16).replace('T', ' ') : '-'}</td>
+        <td><span class="action-link" onclick="openApprove(${r.id})">審批</span></td>
+      </tr>`).join('') : '<tr><td colspan="6" class="empty"><div class="icon">✅</div><div>暫無待審批事項</div></td></tr>'
+  }
+
+  function renderAll() {
+    const typeF = document.getElementById('allTypeFilter').value
+    const statusF = document.getElementById('allStatusFilter').value
+    let list = currentRole === 'admin' ? [...allRequests] : allRequests.filter(r => r.submitted_by === currentUsername)
+    if (typeF) list = list.filter(r => r.type === typeF)
+    if (statusF) list = list.filter(r => r.status === statusF)
+    document.getElementById('allBody').innerHTML = list.length ? list.map(r => `
+      <tr>
+        <td><span class="status-badge" style="background:#e0e7ff;color:#4338ca;">${r.type}</span></td>
+        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.title}</td>
+        <td>${r.submitted_by}</td>
+        <td>${roleLabel(r.submitted_by_role)}</td>
+        <td><span class="status-badge status-${r.status}">${{ pending: '審批中', approved: '已通過', rejected: '已駁回' }[r.status]}</span></td>
+        <td style="font-size:0.82rem;">${r.created_at ? r.created_at.slice(0, 16).replace('T', ' ') : '-'}</td>
+        <td><span class="action-link" onclick="viewDetail(${r.id})">查看</span></td>
+      </tr>`).join('') : '<tr><td colspan="7" class="empty"><div class="icon">📂</div><div>暫無申請記錄</div></td></tr>'
+  }
+
+  function onReqTypeChange() {
+    const type = document.getElementById('req_type').value
+    document.getElementById('reqAmountGroup').style.display = type === '報銷' ? 'block' : 'none'
+    document.getElementById('reqDateGroup').style.display = type === '請假' ? 'flex' : 'none'
+  }
+
+  function openNewRequest() {
+    document.getElementById('newRequestModal').classList.add('show')
+    document.getElementById('req_type').value = ''
+    document.getElementById('req_title').value = ''
+    document.getElementById('req_amount').value = ''
+    document.getElementById('req_description').value = ''
+    document.getElementById('req_start_date').value = ''
+    document.getElementById('req_end_date').value = ''
+    document.getElementById('reqAmountGroup').style.display = 'none'
+    document.getElementById('reqDateGroup').style.display = 'none'
+    setTimeout(() => document.getElementById('req_type').focus(), 100)
+  }
+
+  function closeNewRequest() { document.getElementById('newRequestModal').classList.remove('show') }
+
+  async function submitRequest() {
+    const type = document.getElementById('req_type').value
+    const title = document.getElementById('req_title').value.trim()
+    const description = document.getElementById('req_description').value.trim()
+    const amount = parseFloat(document.getElementById('req_amount').value)
+    const start_date = document.getElementById('req_start_date').value
+    const end_date = document.getElementById('req_end_date').value
+    if (!type) { alert('請選擇申請類型'); return }
+    if (!title) { alert('請輸入標題'); document.getElementById('req_title').focus(); return }
+    if (type === '報銷' && (!amount || amount <= 0)) { alert('請輸入有效金額'); document.getElementById('req_amount').focus(); return }
+    if (type === '請假' && (!start_date || !end_date)) { alert('請選擇請假日期範圍'); return }
+    if (type === '請假' && start_date > end_date) { alert('結束日期不能早於開始日期'); return }
+    const steps = STEP_CONFIG[type] || []
+    const btn = document.getElementById('submitReqBtn')
+    btn.disabled = true; btn.textContent = '提交中...'
+    try {
+      const reqRes = await apiFetch(SUPABASE_URL + '/rest/v1/workflow_requests', {
+        method: 'POST',
+        headers: Object.assign(authHeaders(), { 'Prefer': 'return=representation' }),
+        body: JSON.stringify({
+          type, title, description: description || null,
+          amount: type === '報銷' ? amount : null,
+          start_date: type === '請假' ? start_date : null,
+          end_date: type === '請假' ? end_date : null,
+          max_steps: steps.length,
+          submitted_by: currentUsername, submitted_by_role: currentRole,
+        }),
+      })
+      const newReq = await reqRes.json()
+      const reqId = Array.isArray(newReq) ? newReq[0].id : newReq.id
+      for (let i = 0; i < steps.length; i++) {
+        await apiFetch(SUPABASE_URL + '/rest/v1/workflow_approvals', {
+          method: 'POST', headers: authHeaders(),
+          body: JSON.stringify({ request_id: reqId, step_number: i + 1, approver_role: steps[i].role }),
+        })
+      }
+      closeNewRequest()
+      await Promise.all([loadRequests(), loadApprovals()])
+      renderMy(); renderPending(); renderAll()
+    } catch (err) { alert('提交失敗：' + err.message) }
+    btn.disabled = false; btn.textContent = '提交'
+  }
+
+  async function viewDetail(id) {
+    const r = allRequests.find(x => x.id === id)
+    if (!r) return
+    const approvals = allApprovals.filter(a => a.request_id === id)
+    document.getElementById('detailTitle').textContent = r.type + '申請'
+    document.getElementById('detailSub').textContent = r.title
+    const extra = []
+    if (r.amount) extra.push(`<div class="detail-section"><div class="label">金額</div><div class="value">HK$${Number(r.amount).toFixed(2)}</div></div>`)
+    if (r.start_date) extra.push(`<div class="detail-section"><div class="label">請假期間</div><div class="value">${r.start_date} 至 ${r.end_date}</div></div>`)
+    document.getElementById('detailContent').innerHTML = `
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+        <div class="detail-section"><div class="label">提交人</div><div class="value">${r.submitted_by}</div></div>
+        <div class="detail-section"><div class="label">狀態</div><div class="value"><span class="status-badge status-${r.status}">${{ pending: '審批中', approved: '已通過', rejected: '已駁回' }[r.status]}</span></div></div>
+      </div>
+      ${extra.join('')}
+      ${r.description ? `<div class="detail-section"><div class="label">詳細說明</div><div class="value">${r.description}</div></div>` : ''}`
+    const steps = STEP_CONFIG[r.type] || []
+    document.getElementById('detailTimeline').innerHTML = '<div class="timeline">' + steps.map((s, i) => {
+      const ap = approvals.find(a => a.step_number === i + 1)
+      const status = ap ? ap.status : 'pending'
+      const isCurrent = r.status === 'pending' && r.current_step === i + 1
+      const dotClass = status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : isCurrent ? 'current' : 'pending'
+      const dotIcon = status === 'approved' ? '✓' : status === 'rejected' ? '✗' : isCurrent ? '●' : '○'
+      return `<div class="timeline-item">
+        <div class="timeline-dot ${dotClass}">${dotIcon}</div>
+        <div class="timeline-content">
+          <div class="step-label">${s.label}</div>
+          <div class="step-info">${roleLabel(s.role)}${ap && ap.approver_name ? ' · ' + ap.approver_name : ''}</div>
+          ${status === 'pending' && isCurrent ? '<div class="step-info" style="color:#667eea;">等待審批中</div>' : ''}
+          ${ap && ap.acted_at ? '<div class="step-info">' + ap.acted_at.slice(0, 16).replace('T', ' ') + '</div>' : ''}
+          ${ap && ap.comment ? '<div class="step-comment">' + ap.comment + '</div>' : ''}
+        </div>
+      </div>`
+    }).join('') + '</div>'
+    document.getElementById('detailModal').classList.add('show')
+  }
+
+  function closeDetail() { document.getElementById('detailModal').classList.remove('show') }
+
+  async function openApprove(id) {
+    const r = allRequests.find(x => x.id === id)
+    if (!r) return
+    approveTarget = r
+    document.getElementById('approveSub').textContent = r.type + ': ' + r.title
+    let extra = ''
+    if (r.amount) extra += `<div class="detail-section"><div class="label">金額</div><div class="value" style="font-weight:700;color:#dc2626;">HK$${Number(r.amount).toFixed(2)}</div></div>`
+    if (r.start_date) extra += `<div class="detail-section"><div class="label">請假期間</div><div class="value">${r.start_date} 至 ${r.end_date}</div></div>`
+    document.getElementById('approveDetail').innerHTML = `
+      <div class="detail-section"><div class="label">提交人</div><div class="value">${r.submitted_by}</div></div>
+      ${extra}
+      ${r.description ? `<div class="detail-section"><div class="label">說明</div><div class="value">${r.description}</div></div>` : ''}`
+    document.getElementById('approveComment').value = ''
+    document.getElementById('approveModal').classList.add('show')
+  }
+
+  function closeApprove() { document.getElementById('approveModal').classList.remove('show'); approveTarget = null }
+
+  async function doApprove(status) {
+    if (!approveTarget) return
+    const r = approveTarget
+    const comment = document.getElementById('approveComment').value.trim()
+    const steps = STEP_CONFIG[r.type] || []
+    const stepIdx = r.current_step - 1
+    const step = steps[stepIdx]
+    if (!step) return
+    const btn = status === 'approved' ? document.getElementById('approveBtn') : document.getElementById('rejectBtn')
+    btn.disabled = true; btn.textContent = '處理中...'
+    try {
+      const approvals = allApprovals.filter(a => a.request_id === r.id)
+      const ap = approvals.find(a => a.step_number === r.current_step)
+      if (ap) {
+        await apiFetch(SUPABASE_URL + '/rest/v1/workflow_approvals?id=eq.' + ap.id, {
+          method: 'PATCH', headers: authHeaders(),
+          body: JSON.stringify({ status, approver_name: currentDisplayName, comment: comment || null, acted_at: new Date().toISOString() }),
+        })
+      }
+      if (status === 'rejected') {
+        await apiFetch(SUPABASE_URL + '/rest/v1/workflow_requests?id=eq.' + r.id, {
+          method: 'PATCH', headers: authHeaders(), body: JSON.stringify({ status: 'rejected' }),
+        })
+      } else {
+        const isLastStep = r.current_step >= r.max_steps
+        const update = isLastStep
+          ? { status: 'approved', current_step: r.current_step }
+          : { current_step: r.current_step + 1 }
+        await apiFetch(SUPABASE_URL + '/rest/v1/workflow_requests?id=eq.' + r.id, {
+          method: 'PATCH', headers: authHeaders(), body: JSON.stringify(update),
+        })
+      }
+      closeApprove()
+      await Promise.all([loadRequests(), loadApprovals()])
+      renderMy(); renderPending(); renderAll()
+    } catch (err) { alert('操作失敗：' + err.message) }
+    btn.disabled = false; btn.textContent = status === 'approved' ? '通過' : '駁回'
+  }
+
+  async function checkSession() {
+    const stored = localStorage.getItem('wf_session')
+    if (!stored) return
+    try {
+      const s = JSON.parse(stored)
+      if (s.type === 'admin') { accessToken = s.access_token; currentRole = 'admin'; currentDisplayName = s.email; currentUsername = 'admin' }
+      else { currentRole = s.role; currentDisplayName = s.display_name; currentUsername = s.username }
+      showApp()
+    } catch (_) { localStorage.removeItem('wf_session') }
+  }
+
+  checkSession()
+</script>
+</body>
+</html>
