@@ -6,6 +6,7 @@ const SOURCES = [
   { url: 'https://www.edb.gov.hk/tc/press_release_rss.xml', name: '教育局新聞稿' },
   { url: 'https://www.edb.gov.hk/tc/whats_new_rss.xml', name: '教育局最新消息' },
   { url: 'https://life.mingpao.com/rss/lf/edu', name: '明報教育' },
+  { url: 'https://www.stheadline.com/rss', name: '星島頭條', eduFilter: true },
 ]
 
 function fetchURL(url) {
@@ -21,7 +22,7 @@ function fetchURL(url) {
   })
 }
 
-function parseRSS(xml, sourceName) {
+function parseRSS(xml, sourceName, eduFilter) {
   const items = []
   const itemRe = /<item>[\s\S]*?<\/item>/g
   let m
@@ -31,9 +32,11 @@ function parseRSS(xml, sourceName) {
       const x = m[0].match(r)
       return x ? x[1].trim().replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]+>/g, '').trim() : ''
     }
+    const link = g('link')
+    if (eduFilter && !link.match(/\/edu-news\/|\/local-school\/|\/education\//)) continue
     items.push({
       title: g('title'),
-      link: g('link'),
+      link: link,
       description: g('description').slice(0, 200),
       pubDate: g('pubDate'),
       source: sourceName,
@@ -42,38 +45,16 @@ function parseRSS(xml, sourceName) {
   return items
 }
 
-function scrapeStheadline(html) {
-  const articles = []
-  const linkRe = /<a[^>]*href="(\/[^"]*edu-news[^"]*)"[^>]*>([\s\S]*?)<\/a>/g
-  let m
-  while ((m = linkRe.exec(html)) !== null) {
-    const href = m[1]
-    const inner = m[2].replace(/<[^>]+>/g, '').trim()
-    if (inner && inner.length > 5 && !articles.some(a => a.link === href)) {
-      articles.push({ title: inner, link: 'https://www.stheadline.com' + href, source: '星島頭條' })
-    }
-  }
-  articles.forEach((a, i) => a.pubDate = new Date(Date.now() - i * 3600000).toISOString())
-  return articles
-}
-
 async function main() {
   let all = []
   for (const src of SOURCES) {
     try {
       const xml = await fetchURL(src.url)
-      all = all.concat(parseRSS(xml, src.name))
+      all = all.concat(parseRSS(xml, src.name, src.eduFilter))
       console.log('OK:', src.name)
     } catch (e) {
       console.log('FAIL:', src.name, e.message)
     }
-  }
-  try {
-    const html = await fetchURL('https://www.stheadline.com/edu-news/%E6%95%99%E8%82%B2%E6%96%B0%E8%81%9E')
-    all = all.concat(scrapeStheadline(html))
-    console.log('OK: 星島頭條')
-  } catch (e) {
-    console.log('FAIL: 星島頭條', e.message)
   }
   all.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate))
   all = all.slice(0, 50)
