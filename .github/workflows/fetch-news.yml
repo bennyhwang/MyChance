@@ -8,67 +8,18 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   fetch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download RSS feeds
-        run: |
-          curl -sL --user-agent "Mozilla/5.0" -o rss_edb_press.xml "https://www.edb.gov.hk/tc/press_release_rss.xml"
-          curl -sL --user-agent "Mozilla/5.0" -o rss_edb_news.xml "https://www.edb.gov.hk/tc/whats_new_rss.xml"
-          curl -sL --user-agent "Mozilla/5.0" -o rss_mingpao.xml "https://life.mingpao.com/rss/lf/edu"
-          curl -sL --user-agent "Mozilla/5.0" -o page_stheadline.html "https://www.stheadline.com/edu-news/%E6%95%99%E8%82%B2%E6%96%B0%E8%81%9E"
-          echo "Downloads done"
-      - name: Parse and save
-        run: |
-          cat > /tmp/parse.js << 'EOF'
-          const fs = require('fs');
-          let all = [];
-          const rssSources = [
-            { file: 'rss_edb_press.xml', name: '教育局新聞稿' },
-            { file: 'rss_edb_news.xml', name: '教育局最新消息' },
-            { file: 'rss_mingpao.xml', name: '明報教育' },
-          ];
-          for (const s of rssSources) {
-            try {
-              const xml = fs.readFileSync(s.file + '', 'utf8');
-              const items = [];
-              const itemRe = /<item>[\s\S]*?<\/item>/g;
-              let m;
-              while ((m = itemRe.exec(xml)) !== null) {
-                const g = (tag) => {
-                  const r = new RegExp('<' + tag + '[^>]*>([\\s\\S]*?)<\\/' + tag + '>');
-                  const x = m[0].match(r);
-                  return x ? x[1].trim().replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]+>/g, '').trim() : '';
-                };
-                items.push({ title: g('title'), link: g('link'), description: g('description').slice(0,200), pubDate: g('pubDate'), source: s.name });
-              }
-              all = all.concat(items);
-              console.log('OK:', s.name, items.length);
-            } catch(e) { console.log('FAIL:', s.name, e.message); }
-          }
-          try {
-            const html = fs.readFileSync('page_stheadline.html', 'utf8');
-            const articles = [];
-            const linkRe = /<a[^>]*href="(\/[^"]*edu-news[^"]*)"[^>]*>([\s\S]*?)<\/a>/g;
-            let m2;
-            while ((m2 = linkRe.exec(html)) !== null) {
-              const href = m2[1];
-              const inner = m2[2].replace(/<[^>]+>/g, '').trim();
-              if (inner && inner.length > 5 && !articles.some(a => a.link === href)) {
-                articles.push({ title: inner, link: 'https://www.stheadline.com' + href, source: '星島頭條' });
-              }
-            }
-            articles.forEach((a, i) => a.pubDate = new Date(Date.now() - i * 3600000).toISOString());
-            all = all.concat(articles);
-            console.log('OK: 星島頭條', articles.length);
-          } catch(e) { console.log('FAIL: 星島頭條', e.message); }
-          all.sort((a,b) => new Date(b.pubDate) - new Date(a.pubDate));
-          fs.writeFileSync('news-data.json', JSON.stringify({ items: all.slice(0,50), updated: new Date().toISOString() }));
-          console.log('Saved', all.length, 'items');
-          EOF
-          node /tmp/parse.js
+      - name: Fetch and parse RSS feeds
+        run: node .github/workflows/fetch-news.mjs
+        env:
+          NODE_OPTIONS: '--unhandled-rejections=strict'
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions"
