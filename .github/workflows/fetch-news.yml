@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Fetch and parse RSS feeds
         run: node .github/workflows/fetch-news.mjs
         env:
@@ -26,4 +28,8 @@ jobs:
           git config user.email "github-actions@github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git add news-data.json
-          git diff --cached --quiet || (git commit -m "Update education news [automated]" && git pull --rebase --autostash && git push)
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -m "Update education news [automated]"
+          git fetch origin main
+          git rebase origin/main
+          git push origin main
