@@ -180,10 +180,10 @@
   </div>
 
   <div class="source-tabs" id="sourceTabs">
-    <button class="source-btn active" data-url="https://www.hk01.com/rss/教育">香港01</button>
+    <button class="source-btn active" data-url="https://life.mingpao.com/rss/lf/edu">明報教育</button>
     <button class="source-btn" data-url="https://rss.app/feeds/v1.1/JLZY6B8HCN2ICScI.xml">TOPick</button>
+    <button class="source-btn" data-url="https://www.hk01.com/rss/教育">香港01</button>
     <button class="source-btn" data-url="https://jump.mingpao.com/feed">明報JUMP</button>
-    <button class="source-btn" data-url="https://life.mingpao.com/rss/lf/edu">明報教育</button>
   </div>
 
   <div class="news-grid" id="newsGrid">
@@ -192,9 +192,7 @@
 </div>
 
 <script>
-  const PROXY = 'https://api.allorigins.win/raw?url='
-
-  let currentSource = 'https://www.hk01.com/rss/教育'
+  let currentSource = 'https://life.mingpao.com/rss/lf/edu'
 
   document.getElementById('sourceTabs').addEventListener('click', e => {
     const btn = e.target.closest('.source-btn')
@@ -205,32 +203,47 @@
     loadNews()
   })
 
+  const SERVICES = [
+    (url) => `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=20`,
+    (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+    (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    (url) => `https://rss2json.com/api.json?rss_url=${encodeURIComponent(url)}`,
+  ]
+
   async function fetchRSS(url) {
-    // Try rss2json first, fallback to CORS proxy + XML parse
-    try {
-      const r2j = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=20`)
-      if (r2j.ok) {
-        const d = await r2j.json()
-        if (d.status === 'ok') return d
-      }
-    } catch (_) {}
-    // Fallback: fetch XML via CORS proxy and parse manually
-    const xmlRes = await fetch(PROXY + encodeURIComponent(url))
-    if (!xmlRes.ok) throw new Error('HTTP ' + xmlRes.status)
-    const xmlText = await xmlRes.text()
-    const parser = new DOMParser()
-    const xml = parser.parseFromString(xmlText, 'text/xml')
+    for (let i = 0; i < SERVICES.length; i++) {
+      try {
+        const res = await fetch(SERVICES[i](url), { signal: AbortSignal.timeout(8000) })
+        if (!res.ok) continue
+        if (i === 0) {
+          const d = await res.json()
+          if (d.status === 'ok') return d
+        } else {
+          const xmlText = await res.text()
+          if (xmlText.includes('<rss') || xmlText.includes('<feed')) {
+            return parseRSS(xmlText)
+          }
+        }
+      } catch (_) {}
+    }
+    throw new Error('所有服務均無法連線')
+  }
+
+  function parseRSS(xmlText) {
+    const xml = new DOMParser().parseFromString(xmlText, 'text/xml')
     const items = xml.querySelectorAll('item')
+    if (!items.length) throw new Error('無法解析 RSS')
     return {
       status: 'ok',
       feed: { title: (xml.querySelector('channel>title') || {}).textContent || '' },
-      items: Array.from(items).map(item => ({
+      items: Array.from(items).slice(0, 20).map(item => ({
         title: (item.querySelector('title') || {}).textContent || '',
         link: (item.querySelector('link') || {}).textContent || '',
-        description: (item.querySelector('description') || {}).textContent || '',
+        description: ((item.querySelector('description') || {}).textContent || '').replace(/<[^>]+>/g, ''),
         pubDate: (item.querySelector('pubDate') || {}).textContent || '',
         thumbnail: '',
-        enclosure: { link: (item.querySelector('enclosure') || {}).getAttribute ? (item.querySelector('enclosure') || {}).getAttribute('url') || '' : '' },
+        enclosure: { link: '' },
       })),
     }
   }
