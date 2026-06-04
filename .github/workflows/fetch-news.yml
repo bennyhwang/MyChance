@@ -22,8 +22,6 @@ jobs:
         run: |
           curl -sL --user-agent "Mozilla/5.0" -o rss_edb_press.xml "https://www.edb.gov.hk/tc/press_release_rss.xml"
           curl -sL --user-agent "Mozilla/5.0" -o rss_edb_news.xml "https://www.edb.gov.hk/tc/whats_new_rss.xml"
-          curl -sL --user-agent "Mozilla/5.0" -o rss_mingpao.xml "https://life.mingpao.com/rss/lf/edu"
-          curl -sL --user-agent "Mozilla/5.0" -o rss_stheadline.xml "https://www.stheadline.com/rss"
           echo "Downloads done"
       - name: Parse and save
         run: node .github/workflows/fetch-news.mjs

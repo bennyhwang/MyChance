@@ -46,30 +46,6 @@
     .header-row h1 { font-size: 1.8rem; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
     .header-row p { color: #6b7280; font-size: 0.95rem; }
 
-    .source-tabs {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 2rem;
-      border-bottom: 2px solid #e5e7eb;
-      padding-bottom: 0;
-      flex-wrap: wrap;
-    }
-    .source-btn {
-      padding: 0.7rem 1.5rem;
-      border: none;
-      background: none;
-      font-size: 0.95rem;
-      font-weight: 500;
-      font-family: inherit;
-      color: #6b7280;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      margin-bottom: -2px;
-      transition: all 0.3s;
-    }
-    .source-btn:hover { color: #374151; }
-    .source-btn.active { color: #667eea; border-bottom-color: #667eea; }
-
     .news-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -179,13 +155,6 @@
     <button class="refresh-btn" id="refreshBtn" onclick="loadNews()">🔄 刷新</button>
   </div>
 
-  <div class="source-tabs" id="sourceTabs">
-    <button class="source-btn active" data-source="">全部</button>
-    <button class="source-btn" data-source="教育局新聞稿">教育局</button>
-    <button class="source-btn" data-source="明報教育">明報</button>
-    <button class="source-btn" data-source="星島頭條">星島頭條</button>
-  </div>
-
   <div class="news-grid" id="newsGrid">
     <div class="loading"><div class="icon">📰</div><div>正在載入新聞...</div></div>
   </div>
@@ -194,14 +163,6 @@
 
 <script>
   let newsData = { items: [], updated: '' }
-
-  document.getElementById('sourceTabs').addEventListener('click', e => {
-    const btn = e.target.closest('.source-btn')
-    if (!btn) return
-    document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'))
-    btn.classList.add('active')
-    renderNews()
-  })
 
   async function loadNews() {
     const grid = document.getElementById('newsGrid')
@@ -221,8 +182,7 @@
 
   function renderNews() {
     const grid = document.getElementById('newsGrid')
-    const source = document.querySelector('.source-btn.active').dataset.source
-    const items = source ? newsData.items.filter(i => i.source === source) : newsData.items
+    const items = newsData.items
     if (!items.length) {
       grid.innerHTML = '<div class="error-msg"><div class="icon">📭</div><div>暫無新聞</div></div>'
       document.getElementById('updateInfo').textContent = ''

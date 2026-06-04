@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-function parseRSS(filePath, sourceName, eduFilter) {
+function parseRSS(filePath, sourceName) {
   const xml = fs.readFileSync(filePath + '', 'utf8')
   const items = []
   const itemRe = /<item>[\s\S]*?<\/item>/g
@@ -12,7 +12,6 @@ function parseRSS(filePath, sourceName, eduFilter) {
       return x ? x[1].trim().replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]+>/g, '').trim() : ''
     }
     const link = g('link')
-    if (eduFilter && !link.match(/\/edu-news\/|\/local-school\/|\/education\//)) continue
     items.push({
       title: g('title'),
       link: link,
@@ -29,8 +28,6 @@ async function main() {
   const sources = [
     { file: 'rss_edb_press.xml', name: '教育局新聞稿' },
     { file: 'rss_edb_news.xml', name: '教育局最新消息' },
-    { file: 'rss_mingpao.xml', name: '明報教育' },
-    { file: 'rss_stheadline.xml', name: '星島頭條', eduFilter: true },
   ]
   for (const s of sources) {
     try {
