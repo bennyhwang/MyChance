@@ -180,116 +180,70 @@
   </div>
 
   <div class="source-tabs" id="sourceTabs">
-    <button class="source-btn active" data-url="https://life.mingpao.com/rss/lf/edu">明報教育</button>
-    <button class="source-btn" data-url="https://rss.app/feeds/v1.1/JLZY6B8HCN2ICScI.xml">TOPick</button>
-    <button class="source-btn" data-url="https://www.hk01.com/rss/教育">香港01</button>
-    <button class="source-btn" data-url="https://jump.mingpao.com/feed">明報JUMP</button>
+    <button class="source-btn active" data-source="">全部</button>
+    <button class="source-btn" data-source="教育局新聞稿">教育局</button>
+    <button class="source-btn" data-source="明報教育">明報</button>
+    <button class="source-btn" data-source="香港01">香港01</button>
   </div>
 
   <div class="news-grid" id="newsGrid">
     <div class="loading"><div class="icon">📰</div><div>正在載入新聞...</div></div>
   </div>
+  <p style="text-align:center;color:#9ca3af;font-size:0.8rem;margin-top:1rem;" id="updateInfo"></p>
 </div>
 
 <script>
-  let currentSource = 'https://life.mingpao.com/rss/lf/edu'
+  let newsData = { items: [], updated: '' }
 
   document.getElementById('sourceTabs').addEventListener('click', e => {
     const btn = e.target.closest('.source-btn')
     if (!btn) return
     document.querySelectorAll('.source-btn').forEach(b => b.classList.remove('active'))
     btn.classList.add('active')
-    currentSource = btn.dataset.url
-    loadNews()
+    renderNews()
   })
-
-  const SERVICES = [
-    (url) => `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=20`,
-    (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-    (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-    (url) => `https://rss2json.com/api.json?rss_url=${encodeURIComponent(url)}`,
-  ]
-
-  async function fetchRSS(url) {
-    for (let i = 0; i < SERVICES.length; i++) {
-      try {
-        const res = await fetch(SERVICES[i](url), { signal: AbortSignal.timeout(8000) })
-        if (!res.ok) continue
-        if (i === 0) {
-          const d = await res.json()
-          if (d.status === 'ok') return d
-        } else {
-          const xmlText = await res.text()
-          if (xmlText.includes('<rss') || xmlText.includes('<feed')) {
-            return parseRSS(xmlText)
-          }
-        }
-      } catch (_) {}
-    }
-    throw new Error('所有服務均無法連線')
-  }
-
-  function parseRSS(xmlText) {
-    const xml = new DOMParser().parseFromString(xmlText, 'text/xml')
-    const items = xml.querySelectorAll('item')
-    if (!items.length) throw new Error('無法解析 RSS')
-    return {
-      status: 'ok',
-      feed: { title: (xml.querySelector('channel>title') || {}).textContent || '' },
-      items: Array.from(items).slice(0, 20).map(item => ({
-        title: (item.querySelector('title') || {}).textContent || '',
-        link: (item.querySelector('link') || {}).textContent || '',
-        description: ((item.querySelector('description') || {}).textContent || '').replace(/<[^>]+>/g, ''),
-        pubDate: (item.querySelector('pubDate') || {}).textContent || '',
-        thumbnail: '',
-        enclosure: { link: '' },
-      })),
-    }
-  }
 
   async function loadNews() {
     const grid = document.getElementById('newsGrid')
     const btn = document.getElementById('refreshBtn')
     btn.disabled = true; btn.textContent = '🔄 載入中...'
     grid.innerHTML = '<div class="loading"><div class="icon">📰</div><div>正在載入新聞...</div></div>'
-
     try {
-      const data = await fetchRSS(currentSource)
-      const items = data.items || []
-      if (items.length === 0) {
-        grid.innerHTML = '<div class="error-msg"><div class="icon">📭</div><div>暫無新聞</div></div>'
-        btn.disabled = false; btn.textContent = '🔄 刷新'
-        return
-      }
-
-      grid.innerHTML = items.map(item => {
-        const img = item.enclosure && item.enclosure.link ? item.enclosure.link
-          : (item.thumbnail || '')
-        const desc = (item.description || '').replace(/<[^>]+>/g, '').trim().slice(0, 150)
-        const date = item.pubDate ? new Date(item.pubDate).toLocaleDateString('zh-HK', { year: 'numeric', month: '2-digit', day: '2-digit' }) : ''
-        const sourceName = getSourceName()
-        return `<div class="news-card">
-          ${img ? `<img class="news-card-img" src="${img}" alt="" loading="lazy" onerror="this.style.display='none'">` : '<div class="news-card-img" style="display:flex;align-items:center;justify-content:center;background:#e0e7ff;"><span style="font-size:3rem;">📰</span></div>'}
-          <div class="news-card-body">
-            <h3><a href="${item.link}" target="_blank" rel="noopener">${item.title}</a></h3>
-            <div class="news-desc">${desc || '...'}</div>
-            <div class="news-meta">
-              <span class="news-source">${sourceName}</span>
-              <span>${date}</span>
-            </div>
-          </div>
-        </div>`
-      }).join('')
+      const res = await fetch('news-data.json?' + Date.now())
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      newsData = await res.json()
+      renderNews()
     } catch (err) {
       grid.innerHTML = `<div class="error-msg"><div class="icon">⚠️</div><div>載入失敗：${err.message}</div></div>`
     }
     btn.disabled = false; btn.textContent = '🔄 刷新'
   }
 
-  function getSourceName() {
-    const btn = document.querySelector('.source-btn.active')
-    return btn ? btn.textContent.trim() : '教育新聞'
+  function renderNews() {
+    const grid = document.getElementById('newsGrid')
+    const source = document.querySelector('.source-btn.active').dataset.source
+    const items = source ? newsData.items.filter(i => i.source === source) : newsData.items
+    if (!items.length) {
+      grid.innerHTML = '<div class="error-msg"><div class="icon">📭</div><div>暫無新聞</div></div>'
+      document.getElementById('updateInfo').textContent = ''
+      return
+    }
+    grid.innerHTML = items.map(item => {
+      const desc = (item.description || '').slice(0, 150)
+      const date = item.pubDate ? new Date(item.pubDate).toLocaleDateString('zh-HK', { year: 'numeric', month: '2-digit', day: '2-digit' }) : ''
+      return `<div class="news-card">
+        <div class="news-card-img" style="display:flex;align-items:center;justify-content:center;background:#e0e7ff;"><span style="font-size:3rem;">📰</span></div>
+        <div class="news-card-body">
+          <h3><a href="${item.link}" target="_blank" rel="noopener">${item.title}</a></h3>
+          <div class="news-desc">${desc || '...'}</div>
+          <div class="news-meta">
+            <span class="news-source">${item.source || ''}</span>
+            <span>${date}</span>
+          </div>
+        </div>
+      </div>`
+    }).join('')
+    document.getElementById('updateInfo').textContent = '更新時間：' + (newsData.updated ? new Date(newsData.updated).toLocaleString('zh-HK') : '')
   }
 
   loadNews()
