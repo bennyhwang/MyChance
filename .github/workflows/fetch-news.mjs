@@ -3,15 +3,15 @@ import http from 'http'
 import fs from 'fs'
 
 const SOURCES = [
-  { url: 'http://www.edb.gov.hk/tc/press_release_rss.xml', name: '教育局新聞稿' },
-  { url: 'http://www.edb.gov.hk/tc/whats_new_rss.xml', name: '教育局最新消息' },
+  { url: 'https://www.edb.gov.hk/tc/press_release_rss.xml', name: '教育局新聞稿' },
+  { url: 'https://www.edb.gov.hk/tc/whats_new_rss.xml', name: '教育局最新消息' },
   { url: 'https://life.mingpao.com/rss/lf/edu', name: '明報教育' },
-  { url: 'https://www.hk01.com/rss/教育', name: '香港01' },
+  { url: 'https://www.hk01.com/rss/%E6%95%99%E8%82%B2', name: '香港01' },
 ]
 
 function fetchURL(url) {
-  const mod = url.startsWith('https') ? https : http
   return new Promise((resolve, reject) => {
+    const mod = url.startsWith('https') ? https : http
     const req = mod.get(url, { timeout: 15000 }, res => {
       let data = ''
       res.on('data', c => data += c)
@@ -60,4 +60,8 @@ async function main() {
   console.log('Saved', all.length, 'items')
 }
 
-main()
+main().catch(e => {
+  console.error('FATAL:', e.message)
+  fs.writeFileSync('news-data.json', JSON.stringify({ items: [], updated: new Date().toISOString(), error: e.message }, null, 2))
+  process.exitCode = 0
+})
