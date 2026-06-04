@@ -18,20 +18,20 @@ jobs:
           curl -sL --user-agent "Mozilla/5.0" -o rss_edb_press.xml "https://www.edb.gov.hk/tc/press_release_rss.xml"
           curl -sL --user-agent "Mozilla/5.0" -o rss_edb_news.xml "https://www.edb.gov.hk/tc/whats_new_rss.xml"
           curl -sL --user-agent "Mozilla/5.0" -o rss_mingpao.xml "https://life.mingpao.com/rss/lf/edu"
-          curl -sL --user-agent "Mozilla/5.0" -o rss_hk01.xml "https://www.hk01.com/rss/%E6%95%99%E8%82%B2"
+          curl -sL --user-agent "Mozilla/5.0" -o page_stheadline.html "https://www.stheadline.com/edu-news/%E6%95%99%E8%82%B2%E6%96%B0%E8%81%9E"
           echo "Downloads done"
       - name: Parse and save
         run: |
-          node << 'SCRIPT'
+           node << 'SCRIPT'
           const fs = require('fs');
-          const sources = [
+          let all = [];
+          // Parse RSS XML
+          const rssSources = [
             { file: 'rss_edb_press.xml', name: '教育局新聞稿' },
             { file: 'rss_edb_news.xml', name: '教育局最新消息' },
             { file: 'rss_mingpao.xml', name: '明報教育' },
-            { file: 'rss_hk01.xml', name: '香港01' },
           ];
-          let all = [];
-          for (const s of sources) {
+          for (const s of rssSources) {
             try {
               const xml = fs.readFileSync(s.file, 'utf8');
               const items = [];
@@ -49,6 +49,24 @@ jobs:
               console.log('OK:', s.name, items.length);
             } catch(e) { console.log('FAIL:', s.name, e.message); }
           }
+          // Scrape stheadline HTML
+          try {
+            const html = fs.readFileSync('page_stheadline.html', 'utf8');
+            const articles = [];
+            const linkRe = /<a[^>]*href="(\/[^"]*edu-news[^"]*)"[^>]*>([\s\S]*?)<\/a>/g;
+            let m2;
+            while ((m2 = linkRe.exec(html)) !== null) {
+              const href = m2[1];
+              const inner = m2[2].replace(/<[^>]+>/g, '').trim();
+              if (inner && inner.length > 5 && !articles.some(a => a.link === href)) {
+                articles.push({ title: inner, link: 'https://www.stheadline.com' + href, source: '星島頭條' });
+              }
+            }
+            // assign a pseudo pubDate so they appear first
+            articles.forEach((a, i) => a.pubDate = new Date(Date.now() - i * 3600000).toISOString());
+            all = all.concat(articles);
+            console.log('OK: 星島頭條', articles.length);
+          } catch(e) { console.log('FAIL: 星島頭條', e.message); }
           all.sort((a,b) => new Date(b.pubDate) - new Date(a.pubDate));
           fs.writeFileSync('news-data.json', JSON.stringify({ items: all.slice(0,50), updated: new Date().toISOString() }));
           console.log('Saved', all.length, 'items');
