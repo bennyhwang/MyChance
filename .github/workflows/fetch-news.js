@@ -1,4 +1,5 @@
-import fs from 'fs'
+const https = require('https')
+const fs = require('fs')
 
 const SOURCES = [
   { url: 'https://www.edb.gov.hk/tc/press_release_rss.xml', name: '教育局新聞稿' },
@@ -6,6 +7,18 @@ const SOURCES = [
   { url: 'https://life.mingpao.com/rss/lf/edu', name: '明報教育' },
   { url: 'https://www.hk01.com/rss/%E6%95%99%E8%82%B2', name: '香港01' },
 ]
+
+function fetchURL(url) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, { timeout: 15000 }, res => {
+      let data = ''
+      res.on('data', c => data += c)
+      res.on('end', () => resolve(data))
+    })
+    req.on('error', reject)
+    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')) })
+  })
+}
 
 function parseRSS(xml, sourceName) {
   const items = []
@@ -17,13 +30,7 @@ function parseRSS(xml, sourceName) {
       const x = m[0].match(r)
       return x ? x[1].trim().replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]+>/g, '').trim() : ''
     }
-    items.push({
-      title: g('title'),
-      link: g('link'),
-      description: g('description').slice(0, 200),
-      pubDate: g('pubDate'),
-      source: sourceName,
-    })
+    items.push({ title: g('title'), link: g('link'), description: g('description').slice(0, 200), pubDate: g('pubDate'), source: sourceName })
   }
   return items
 }
@@ -32,9 +39,7 @@ async function main() {
   let all = []
   for (const src of SOURCES) {
     try {
-      const res = await fetch(src.url, { signal: AbortSignal.timeout(15000) })
-      if (!res.ok) { console.log('FAIL:', src.name, 'HTTP', res.status); continue }
-      const xml = await res.text()
+      const xml = await fetchURL(src.url)
       all = all.concat(parseRSS(xml, src.name))
       console.log('OK:', src.name)
     } catch (e) {
@@ -42,14 +47,11 @@ async function main() {
     }
   }
   all.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate))
-  all = all.slice(0, 50)
-  fs.writeFileSync('news-data.json', JSON.stringify({ items: all, updated: new Date().toISOString() }, null, 2))
+  fs.writeFileSync('news-data.json', JSON.stringify({ items: all.slice(0, 50), updated: new Date().toISOString() }))
   console.log('Saved', all.length, 'items')
-  process.exit(0)
 }
 
 main().catch(e => {
   console.error('FATAL:', e.message)
-  fs.writeFileSync('news-data.json', JSON.stringify({ items: [], updated: new Date().toISOString(), error: e.message }, null, 2))
-  process.exit(0)
-})
+  fs.writeFileSync('news-data.json', JSON.stringify({ items: [], updated: new Date().toISOString(), error: e.message }))
+}).finally(() => process.exit(0))

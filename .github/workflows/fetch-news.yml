@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Fetch and parse RSS feeds
-        run: node .github/workflows/fetch-news.mjs
+        run: node .github/workflows/fetch-news.js
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions"
