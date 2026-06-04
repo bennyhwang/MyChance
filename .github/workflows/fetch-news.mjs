@@ -1,28 +1,7 @@
-import https from 'https'
-import http from 'http'
 import fs from 'fs'
 
-const SOURCES = [
-  { url: 'https://www.edb.gov.hk/tc/press_release_rss.xml', name: '教育局新聞稿' },
-  { url: 'https://www.edb.gov.hk/tc/whats_new_rss.xml', name: '教育局最新消息' },
-  { url: 'https://life.mingpao.com/rss/lf/edu', name: '明報教育' },
-  { url: 'https://www.stheadline.com/rss', name: '星島頭條', eduFilter: true },
-]
-
-function fetchURL(url) {
-  return new Promise((resolve, reject) => {
-    const mod = url.startsWith('https') ? https : http
-    const req = mod.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } }, res => {
-      let data = ''
-      res.on('data', c => data += c)
-      res.on('end', () => resolve(data))
-    })
-    req.on('error', reject)
-    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')) })
-  })
-}
-
-function parseRSS(xml, sourceName, eduFilter) {
+function parseRSS(filePath, sourceName, eduFilter) {
+  const xml = fs.readFileSync(filePath + '', 'utf8')
   const items = []
   const itemRe = /<item>[\s\S]*?<\/item>/g
   let m
@@ -47,13 +26,19 @@ function parseRSS(xml, sourceName, eduFilter) {
 
 async function main() {
   let all = []
-  for (const src of SOURCES) {
+  const sources = [
+    { file: 'rss_edb_press.xml', name: '教育局新聞稿' },
+    { file: 'rss_edb_news.xml', name: '教育局最新消息' },
+    { file: 'rss_mingpao.xml', name: '明報教育' },
+    { file: 'rss_stheadline.xml', name: '星島頭條', eduFilter: true },
+  ]
+  for (const s of sources) {
     try {
-      const xml = await fetchURL(src.url)
-      all = all.concat(parseRSS(xml, src.name, src.eduFilter))
-      console.log('OK:', src.name)
+      const items = parseRSS(s.file, s.name, s.eduFilter)
+      all = all.concat(items)
+      console.log('OK:', s.name, items.length)
     } catch (e) {
-      console.log('FAIL:', src.name, e.message)
+      console.log('FAIL:', s.name, e.message)
     }
   }
   all.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate))
