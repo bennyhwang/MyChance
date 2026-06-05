@@ -638,23 +638,6 @@
       </div>
     </div>
 
-  </div>
-</div>
-
-<!-- 回訪彈窗 -->
-<div class="modal-overlay" id="followUpModal">
-  <div class="modal-box">
-    <h3>回訪記錄</h3>
-    <p class="modal-sub">家長：<span id="modalParentName"></span></p>
-    <textarea id="followUpInput" maxlength="50" placeholder="請輸入回訪記錄（最多 50 個中文字）" oninput="updateCharCount()"></textarea>
-    <div class="modal-counter"><span id="charCount">0</span>/50</div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeFollowUp()">放棄</button>
-      <button class="btn-save" id="saveFollowUpBtn" onclick="saveFollowUp()">接受</button>
-    </div>
-  </div>
-</div>
-
 <!-- 教學資源視圖 -->
 <div id="resourcesView" class="view">
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
@@ -684,6 +667,23 @@
       <span style="width:1.8rem;display:inline-block;"></span>
     </div>
     <div id="resourceList"></div>
+  </div>
+</div>
+
+  </div>
+</div>
+
+<!-- 回訪彈窗 -->
+<div class="modal-overlay" id="followUpModal">
+  <div class="modal-box">
+    <h3>回訪記錄</h3>
+    <p class="modal-sub">家長：<span id="modalParentName"></span></p>
+    <textarea id="followUpInput" maxlength="50" placeholder="請輸入回訪記錄（最多 50 個中文字）" oninput="updateCharCount()"></textarea>
+    <div class="modal-counter"><span id="charCount">0</span>/50</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeFollowUp()">放棄</button>
+      <button class="btn-save" id="saveFollowUpBtn" onclick="saveFollowUp()">接受</button>
+    </div>
   </div>
 </div>
 
