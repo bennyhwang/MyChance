@@ -11,32 +11,41 @@
 
     .hero {
       min-height: 100vh;
-      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e, #3a2d7a, #0f0c29);
+      background-size: 600% 600%;
+      animation: heroBg 7s ease infinite;
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
       overflow: hidden;
     }
+    @keyframes heroBg {
+      0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}
+    }
     .hero::before {
       content: '';
       position: absolute;
       width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(102,126,234,0.15) 0%, transparent 70%);
-      top: -200px; right: -200px;
-      animation: float 8s ease-in-out infinite;
+      background: radial-gradient(circle, rgba(102,126,234,0.25) 0%, transparent 50%);
+      top: -200px; right: -150px;
+      animation: floatA 14s ease-in-out infinite;
+      pointer-events: none;
     }
     .hero::after {
       content: '';
       position: absolute;
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(118,75,162,0.15) 0%, transparent 70%);
-      bottom: -100px; left: -100px;
-      animation: float 10s ease-in-out infinite reverse;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(240,147,251,0.2) 0%, transparent 50%);
+      bottom: -150px; left: -100px;
+      animation: floatB 16s ease-in-out infinite reverse;
+      pointer-events: none;
     }
-    @keyframes float {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      50% { transform: translate(30px, -30px) scale(1.05); }
+    @keyframes floatA {
+      0%,100%{transform:translate(0,0)scale(1)}50%{transform:translate(50px,-50px)scale(1.1)}
+    }
+    @keyframes floatB {
+      0%,100%{transform:translate(0,0)scale(1)}50%{transform:translate(-50px,50px)scale(1.1)}
     }
 
     .hero-content {
