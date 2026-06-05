@@ -355,6 +355,7 @@
       <button class="tab-btn" onclick="switchTab('accounts')">賬號管理</button>
       <button class="tab-btn" onclick="switchTab('schedules');setTimeout(renderScheduleCourseList,50)">排課管理</button>
       <button class="tab-btn" onclick="switchTab('attendance');setTimeout(renderAttStudentList,50)">考勤管理</button>
+      <button class="tab-btn" onclick="switchTab('resources')">教學資源</button>
     </div>
 
     <!-- 咨詢記錄視圖 -->
@@ -650,6 +651,22 @@
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeFollowUp()">放棄</button>
       <button class="btn-save" id="saveFollowUpBtn" onclick="saveFollowUp()">接受</button>
+    </div>
+  </div>
+</div>
+
+<!-- 教學資源視圖 -->
+<div id="resourcesView" class="view">
+  <h1 style="font-size:1.8rem;margin-bottom:0.3rem;">教學資源</h1>
+  <p class="stat-card" style="box-shadow:none;padding:0;text-align:left;margin-bottom:2rem;color:#6b7280;font-size:0.95rem;">下載教學相關的實用模板和資源</p>
+  <div style="background:#fff;border-radius:16px;padding:2rem;box-shadow:0 2px 10px rgba(0,0,0,0.04);">
+    <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+      <div style="font-size:3rem;">📄</div>
+      <div style="flex:1;min-width:200px;">
+        <h3 style="font-size:1.1rem;margin-bottom:0.3rem;">教培實用表格模板5套</h3>
+        <p style="color:#6b7280;font-size:0.9rem;">包含多份常用教培管理表格，適用於日常營運</p>
+      </div>
+      <a href="templates/教培实用表格模板5套.xlsx" download style="padding:0.7rem 1.5rem;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;font-size:0.95rem;text-decoration:none;transition:all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">⬇ 下載</a>
     </div>
   </div>
 </div>
@@ -1314,7 +1331,7 @@
   function switchTab(name) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
-    const tabs = { inquiries: 0, teachers: 1, students: 2, courses: 3, registrations: 4, accounts: 5, schedules: 6, attendance: 7 }
+    const tabs = { inquiries: 0, teachers: 1, students: 2, courses: 3, registrations: 4, accounts: 5, schedules: 6, attendance: 7, resources: 8 }
     document.querySelectorAll('.tab-btn')[tabs[name]].classList.add('active')
     document.getElementById(name + 'View').classList.add('active')
   }
