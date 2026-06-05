@@ -666,13 +666,24 @@
       <button class="add-btn" onclick="openResourceUpload()" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.65rem 1.2rem;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;font-size:0.9rem;cursor:pointer;transition:all 0.3s;">＋ 新增資源</button>
     </div>
   </div>
-  <div id="resourceTokenBox" style="background:#fff3cd;border:1px solid #ffc107;border-radius:12px;padding:0.8rem 1.2rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+  <div id="resourceTokenBox" style="background:#fff3cd;border:1px solid #ffc107;border-radius:12px;padding:0.8rem 1.2rem;margin-bottom:1.5rem;display:none;align-items:center;gap:1rem;flex-wrap:wrap;">
     <span style="font-size:0.85rem;color:#856404;">為使用上傳功能，請輸入 GitHub Token</span>
     <input type="password" id="githubTokenInput" placeholder="ghp_..." style="flex:1;min-width:180px;padding:0.5rem 0.8rem;border:1px solid #e5e7eb;border-radius:8px;font-size:0.85rem;">
     <button onclick="saveGithubToken()" style="padding:0.5rem 1rem;background:#667eea;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem;">保存</button>
+    <button onclick="closeTokenBox()" style="padding:0.5rem 1rem;background:none;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:0.85rem;">關閉</button>
     <span id="tokenStatus" style="font-size:0.8rem;color:#6b7280;"></span>
   </div>
-  <div id="resourceList" style="display:flex;flex-direction:column;gap:0.8rem;"></div>
+  <div style="display:flex;flex-direction:column;gap:0.8rem;">
+    <div style="background:#fff;border-radius:12px;padding:1rem 1.5rem;box-shadow:0 2px 10px rgba(0,0,0,0.04);display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <span style="font-size:2rem;">📄</span>
+      <div style="flex:1;min-width:160px;">
+        <div style="font-weight:600;font-size:1rem;">教培實用表格模板5套</div>
+        <div style="font-size:0.85rem;color:#6b7280;margin-top:0.2rem;">包含多份常用教培管理表格，適用於日常營運</div>
+      </div>
+      <a href="templates/教培实用表格模板5套.xlsx" download style="padding:0.5rem 1.2rem;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;font-size:0.85rem;text-decoration:none;white-space:nowrap;">⬇ 下載</a>
+    </div>
+    <div id="resourceList"></div>
+  </div>
 </div>
 
 <!-- 上傳資源彈窗 -->
@@ -1182,6 +1193,7 @@
   // ============ 教學資源 ============
 
   async function loadResources() {
+    checkTokenBox()
     const list = document.getElementById('resourceList')
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/resources?order=created_at.desc`, {
@@ -1211,15 +1223,28 @@
     }
   }
 
+  function checkTokenBox() {
+    const box = document.getElementById('resourceTokenBox')
+    if (localStorage.getItem('github_token')) {
+      box.style.display = 'none'
+    } else {
+      box.style.display = 'flex'
+    }
+  }
+
+  function closeTokenBox() {
+    document.getElementById('resourceTokenBox').style.display = 'none'
+  }
+
   function saveGithubToken() {
     const token = document.getElementById('githubTokenInput').value.trim()
-    if (token) { localStorage.setItem('github_token', token); document.getElementById('tokenStatus').textContent = '✓ 已保存' }
+    if (token) { localStorage.setItem('github_token', token); document.getElementById('tokenStatus').textContent = '✓ 已保存'; document.getElementById('resourceTokenBox').style.display = 'none' }
     else { localStorage.removeItem('github_token'); document.getElementById('tokenStatus').textContent = '✕ 已清除' }
   }
 
   function openResourceUpload() {
     const saved = localStorage.getItem('github_token')
-    if (saved) document.getElementById('githubTokenInput').value = saved
+    if (!saved) { document.getElementById('resourceTokenBox').style.display = 'flex'; return }
     document.getElementById('resourceFileInput').value = ''
     document.getElementById('resourceTitleInput').value = ''
     document.getElementById('resourceDescInput').value = ''
