@@ -657,19 +657,50 @@
 
 <!-- 教學資源視圖 -->
 <div id="resourcesView" class="view">
-  <h1 style="font-size:1.8rem;margin-bottom:0.3rem;">教學資源</h1>
-  <p class="stat-card" style="box-shadow:none;padding:0;text-align:left;margin-bottom:2rem;color:#6b7280;font-size:0.95rem;">下載教學相關的實用模板和資源</p>
-  <div style="background:#fff;border-radius:16px;padding:2rem;box-shadow:0 2px 10px rgba(0,0,0,0.04);">
-    <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
-      <div style="font-size:3rem;">📄</div>
-      <div style="flex:1;min-width:200px;">
-        <h3 style="font-size:1.1rem;margin-bottom:0.3rem;">教培實用表格模板5套</h3>
-        <p style="color:#6b7280;font-size:0.9rem;">包含多份常用教培管理表格，適用於日常營運</p>
-      </div>
-      <a href="templates/教培实用表格模板5套.xlsx" download style="padding:0.7rem 1.5rem;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;font-size:0.95rem;text-decoration:none;transition:all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">⬇ 下載</a>
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+    <div>
+      <h1 style="font-size:1.8rem;margin-bottom:0.3rem;">教學資源</h1>
+      <p style="color:#6b7280;font-size:0.95rem;">管理教學相關資源文件</p>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <button class="add-btn" onclick="openResourceUpload()" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.65rem 1.2rem;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;font-size:0.9rem;cursor:pointer;transition:all 0.3s;">＋ 新增資源</button>
+    </div>
+  </div>
+  <div id="resourceTokenBox" style="background:#fff3cd;border:1px solid #ffc107;border-radius:12px;padding:0.8rem 1.2rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+    <span style="font-size:0.85rem;color:#856404;">為使用上傳功能，請輸入 GitHub Token</span>
+    <input type="password" id="githubTokenInput" placeholder="ghp_..." style="flex:1;min-width:180px;padding:0.5rem 0.8rem;border:1px solid #e5e7eb;border-radius:8px;font-size:0.85rem;">
+    <button onclick="saveGithubToken()" style="padding:0.5rem 1rem;background:#667eea;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem;">保存</button>
+    <span id="tokenStatus" style="font-size:0.8rem;color:#6b7280;"></span>
+  </div>
+  <div id="resourceList" style="display:flex;flex-direction:column;gap:0.8rem;"></div>
+</div>
+
+<!-- 上傳資源彈窗 -->
+<div class="modal-overlay" id="resourceUploadModal">
+  <div class="modal-box" style="max-width:550px;">
+    <h3>上傳新資源</h3>
+    <p class="modal-sub">選擇檔案並填寫說明</p>
+    <div class="form-group">
+      <label>檔案 <span class="req">*</span></label>
+      <input type="file" id="resourceFileInput" style="padding:0.5rem 0;font-size:0.9rem;">
+    </div>
+    <div class="form-group">
+      <label>資源名稱 <span class="req">*</span></label>
+      <input type="text" id="resourceTitleInput" placeholder="如：教培實用表格模板5套">
+    </div>
+    <div class="form-group">
+      <label>說明</label>
+      <textarea id="resourceDescInput" rows="3" placeholder="簡要描述資源內容..." style="width:100%;padding:0.7rem 1rem;border:1px solid #e5e7eb;border-radius:10px;font-size:0.9rem;font-family:inherit;resize:vertical;"></textarea>
+    </div>
+    <div id="uploadProgress" style="display:none;margin-bottom:1rem;padding:1rem;background:#f3f4f6;border-radius:10px;text-align:center;font-size:0.85rem;color:#6b7280;">上傳中，請稍候...</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeResourceUpload()">取消</button>
+      <button class="btn-save" id="resourceUploadBtn" onclick="uploadResource()">上傳</button>
     </div>
   </div>
 </div>
+
+<!-- 回訪彈窗 -->
 
 <!-- 回訪彈窗 -->
 <div class="modal-overlay" id="teacherModal">
@@ -1148,6 +1179,133 @@
     }
   }
 
+  // ============ 教學資源 ============
+
+  const SUPABASE_URL = 'https://fuuwjceawowojecaqfru.supabase.co'
+  const SUPABASE_KEY = 'sb_publishable_M3lmOrr1QDDkkKE3r9q7qQ_mVnLlYtQ'
+
+  async function loadResources() {
+    const list = document.getElementById('resourceList')
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/resources?order=created_at.desc`, {
+        headers: { 'apikey': SUPABASE_KEY },
+      })
+      const data = await res.json()
+      if (!data.length) {
+        list.innerHTML = '<div style="text-align:center;padding:3rem 1rem;color:#9ca3af;">暫無資源</div>'
+        return
+      }
+      list.innerHTML = data.map(r => {
+        const icon = r.filename.match(/\.(xlsx?|pdf|docx?|pptx?|zip)$/i) ? '📄' : '📁'
+        const size = r.filesize ? (r.filesize / 1024).toFixed(1) + ' KB' : ''
+        return `<div style="background:#fff;border-radius:12px;padding:1rem 1.5rem;box-shadow:0 2px 10px rgba(0,0,0,0.04);display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+          <span style="font-size:2rem;">${icon}</span>
+          <div style="flex:1;min-width:160px;">
+            <div style="font-weight:600;font-size:1rem;">${r.title}</div>
+            <div style="font-size:0.85rem;color:#6b7280;margin-top:0.2rem;">${r.description || ''} ${size ? '（' + size + '）' : ''}</div>
+            <div style="font-size:0.75rem;color:#9ca3af;margin-top:0.2rem;">${r.created_at ? new Date(r.created_at).toLocaleDateString('zh-HK') : ''}</div>
+          </div>
+          <a href="${r.filepath}" download style="padding:0.5rem 1.2rem;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;font-size:0.85rem;text-decoration:none;white-space:nowrap;">⬇ 下載</a>
+          <button onclick="deleteResource(${r.id})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.2rem;padding:0.3rem;" title="刪除">✕</button>
+        </div>`
+      }).join('')
+    } catch (e) {
+      list.innerHTML = `<div style="text-align:center;padding:3rem 1rem;color:#ef4444;">載入失敗：${e.message}</div>`
+    }
+  }
+
+  function saveGithubToken() {
+    const token = document.getElementById('githubTokenInput').value.trim()
+    if (token) { localStorage.setItem('github_token', token); document.getElementById('tokenStatus').textContent = '✓ 已保存' }
+    else { localStorage.removeItem('github_token'); document.getElementById('tokenStatus').textContent = '✕ 已清除' }
+  }
+
+  function openResourceUpload() {
+    const saved = localStorage.getItem('github_token')
+    if (saved) document.getElementById('githubTokenInput').value = saved
+    document.getElementById('resourceFileInput').value = ''
+    document.getElementById('resourceTitleInput').value = ''
+    document.getElementById('resourceDescInput').value = ''
+    document.getElementById('uploadProgress').style.display = 'none'
+    document.getElementById('resourceUploadBtn').disabled = false
+    document.getElementById('resourceUploadBtn').textContent = '上傳'
+    document.getElementById('resourceUploadModal').style.display = 'flex'
+  }
+
+  function closeResourceUpload() {
+    document.getElementById('resourceUploadModal').style.display = 'none'
+  }
+
+  async function uploadResource() {
+    const fileInput = document.getElementById('resourceFileInput')
+    const title = document.getElementById('resourceTitleInput').value.trim()
+    const desc = document.getElementById('resourceDescInput').value.trim()
+    const tokenInput = document.getElementById('githubTokenInput').value.trim()
+    const token = tokenInput || localStorage.getItem('github_token')
+
+    if (!fileInput.files.length) { alert('請選擇檔案'); return }
+    if (!title) { alert('請輸入資源名稱'); return }
+    if (!token) { alert('請輸入 GitHub Token'); return }
+
+    localStorage.setItem('github_token', token)
+    document.getElementById('tokenStatus').textContent = '✓ 已保存'
+
+    const file = fileInput.files[0]
+    const progress = document.getElementById('uploadProgress')
+    const btn = document.getElementById('resourceUploadBtn')
+    progress.style.display = 'block'; progress.textContent = '正在上傳到 GitHub...'
+    btn.disabled = true; btn.textContent = '上傳中...'
+
+    try {
+      const reader = new FileReader()
+      const content = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result.split(',')[1])
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      const path = 'resources/' + Date.now() + '_' + file.name
+      const url = `https://api.github.com/repos/bennyhwang/MyChance/contents/${path}`
+
+      const uploadRes = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'Upload resource: ' + title, content: content }),
+      })
+      if (!uploadRes.ok) {
+        const errData = await uploadRes.json()
+        throw new Error(errData.message || '上傳失敗')
+      }
+      const uploadData = await uploadRes.json()
+      const downloadUrl = uploadData.content.download_url
+
+      progress.textContent = '正在保存到資料庫...'
+      const dbRes = await fetch(`${SUPABASE_URL}/rest/v1/resources`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description: desc, filename: file.name, filepath: downloadUrl, filesize: file.size }),
+      })
+      if (!dbRes.ok) throw new Error('保存到資料庫失敗')
+
+      closeResourceUpload()
+      loadResources()
+    } catch (e) {
+      alert('上傳失敗：' + e.message)
+      progress.style.display = 'none'
+      btn.disabled = false; btn.textContent = '上傳'
+    }
+  }
+
+  async function deleteResource(id) {
+    if (!confirm('確定刪除此資源？')) return
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/resources?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: { 'apikey': SUPABASE_KEY },
+      })
+      loadResources()
+    } catch (e) { alert('刪除失敗：' + e.message) }
+  }
+
   async function loadRoleData(session) {
     if (currentRole === 'academic') {
       await Promise.all([loadData(), loadTeachers(), loadStudents(), loadCourses(), loadRegistrations()])
@@ -1334,6 +1492,7 @@
     const tabs = { inquiries: 0, teachers: 1, students: 2, courses: 3, registrations: 4, accounts: 5, schedules: 6, attendance: 7, resources: 8 }
     document.querySelectorAll('.tab-btn')[tabs[name]].classList.add('active')
     document.getElementById(name + 'View').classList.add('active')
+    if (name === 'resources') loadResources()
   }
 
   // ============ 咨詢記錄 ============
