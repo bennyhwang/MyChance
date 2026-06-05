@@ -18,26 +18,23 @@
       position: relative;
       overflow: hidden;
     }
-    .hero::before {
-      content: '';
+    .hero-light {
       position: absolute;
-      width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(102,126,234,0.15) 0%, transparent 70%);
-      top: -200px; right: -200px;
-      animation: float 8s ease-in-out infinite;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
     }
-    .hero::after {
-      content: '';
-      position: absolute;
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(118,75,162,0.15) 0%, transparent 70%);
-      bottom: -100px; left: -100px;
-      animation: float 10s ease-in-out infinite reverse;
-    }
-    @keyframes float {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      50% { transform: translate(30px, -30px) scale(1.05); }
-    }
+    .light-1 { width:600px;height:600px;background:radial-gradient(circle,rgba(102,126,234,0.25) 0%,transparent 70%);top:-15%;left:-10%;animation:float1 12s ease-in-out infinite; }
+    .light-2 { width:500px;height:500px;background:radial-gradient(circle,rgba(240,147,251,0.2) 0%,transparent 70%);bottom:-20%;right:-10%;animation:float2 15s ease-in-out infinite; }
+    .light-3 { width:400px;height:400px;background:radial-gradient(circle,rgba(245,87,108,0.15) 0%,transparent 70%);top:20%;right:25%;animation:float3 10s ease-in-out infinite; }
+    .light-4 { width:350px;height:350px;background:radial-gradient(circle,rgba(79,172,254,0.15) 0%,transparent 70%);top:50%;left:15%;animation:float4 18s ease-in-out infinite; }
+    .light-5 { width:800px;height:800px;background:radial-gradient(circle,rgba(102,126,234,0.08) 0%,transparent 70%);top:-30%;left:30%;animation:float5 20s ease-in-out infinite; }
+    @keyframes float1 { 0%,100%{transform:translate(0,0)scale(1)}25%{transform:translate(80px,-60px)scale(1.1)}50%{transform:translate(40px,80px)scale(.9)}75%{transform:translate(-60px,-40px)scale(1.05)} }
+    @keyframes float2 { 0%,100%{transform:translate(0,0)scale(1)}33%{transform:translate(-70px,50px)scale(1.15)}66%{transform:translate(50px,-70px)scale(.85)} }
+    @keyframes float3 { 0%,100%{transform:translate(0,0)scale(1)}50%{transform:translate(-40px,-60px)scale(1.2)} }
+    @keyframes float4 { 0%,100%{transform:translate(0,0)scale(1)}25%{transform:translate(60px,40px)scale(1.05)}50%{transform:translate(-30px,-50px)scale(.95)}75%{transform:translate(-70px,30px)scale(1.1)} }
+    @keyframes float5 { 0%,100%{transform:translate(0,0)rotate(0deg)scale(1)}50%{transform:translate(40px,-30px)rotate(180deg)scale(1.05)} }
 
     .hero-content {
       text-align: center;
@@ -289,6 +286,11 @@
     </div>
     <a href="form.html" class="hero-btn">立即咨詢</a>
   </div>
+  <div class="hero-light light-1"></div>
+  <div class="hero-light light-2"></div>
+  <div class="hero-light light-3"></div>
+  <div class="hero-light light-4"></div>
+  <div class="hero-light light-5"></div>
 </section>
 
 <section id="about">
