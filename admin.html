@@ -745,7 +745,7 @@
     </div>
     <div class="form-group">
       <label>所屬課程</label>
-      <input type="text" id="videoCourseInput" placeholder="如：小學數學精英班">
+      <select id="videoCourseInput"><option value="">-- 請選擇課程 --</option></select>
     </div>
     <div class="form-group">
       <label>平台 <span class="req">*</span></label>
@@ -2611,7 +2611,16 @@
 
   // ============ 課程回看 ============
 
-  function openAddVideo() { document.getElementById('videoTitleInput').value = ''; document.getElementById('videoDescInput').value = ''; document.getElementById('videoCourseInput').value = ''; document.getElementById('videoPlatformInput').value = 'youtube'; document.getElementById('videoIdInput').value = ''; document.getElementById('videoModal').style.display = 'flex' }
+  async function openAddVideo() {
+    document.getElementById('videoTitleInput').value = ''; document.getElementById('videoDescInput').value = ''; document.getElementById('videoPlatformInput').value = 'youtube'; document.getElementById('videoIdInput').value = ''
+    const sel = document.getElementById('videoCourseInput'); sel.innerHTML = '<option value="">-- 請選擇課程 --</option>'
+    try {
+      const res = await apiFetch(SUPABASE_URL + '/rest/v1/courses?select=id,course_name&order=course_name.asc', { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken } })
+      const courses = await res.json()
+      courses.forEach(function(c) { sel.innerHTML += '<option value="' + escHtml(c.course_name) + '">' + escHtml(c.course_name) + '</option>' })
+    } catch (e) { console.error(e) }
+    document.getElementById('videoModal').style.display = 'flex'
+  }
 
   function closeVideoModal() { document.getElementById('videoModal').style.display = 'none' }
 
@@ -2633,7 +2642,7 @@
   async function saveVideo() {
     const title = document.getElementById('videoTitleInput').value.trim()
     const description = document.getElementById('videoDescInput').value.trim()
-    const course_name = document.getElementById('videoCourseInput').value.trim()
+    const course_name = document.getElementById('videoCourseInput').value
     const platform = document.getElementById('videoPlatformInput').value
     const video_id = document.getElementById('videoIdInput').value.trim()
     if (!title || !video_id) { alert('請填寫標題和影片 ID'); return }
