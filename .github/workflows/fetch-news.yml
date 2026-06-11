@@ -18,11 +18,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Download RSS feeds
+      - name: Download EDB news page
         run: |
-          curl -sL --user-agent "Mozilla/5.0" -o rss_edb_press.xml "https://www.edb.gov.hk/tc/press_release_rss.xml"
-          curl -sL --user-agent "Mozilla/5.0" -o rss_edb_news.xml "https://www.edb.gov.hk/tc/whats_new_rss.xml"
-          echo "Downloads done"
+          curl -sL --user-agent "Mozilla/5.0" -o edb_all.html "https://www.edb.gov.hk/sc/news/all.html"
+          echo "Download done"
       - name: Parse and save
         run: node .github/workflows/fetch-news.mjs
         env:
