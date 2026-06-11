@@ -2494,6 +2494,8 @@
 
   // ============ 公司公告 ============
 
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+
   let editingNewsId = null
 
   function openAddNews() { editingNewsId = null; document.getElementById('newsTitleInput').value = ''; document.getElementById('newsContentInput').value = ''; document.getElementById('newsModalTitle').textContent = '新增公告'; document.getElementById('newsSaveBtn').textContent = '發佈'; document.getElementById('newsModal').style.display = 'flex' }
