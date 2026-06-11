@@ -700,12 +700,13 @@
     </div>
     <div class="form-group">
       <label>English Title <span class="req">*</span></label>
-      <input type="text" id="newsTitleEnInput" placeholder="e.g. 2026 Summer Enrollment Now Open">
+      <input type="text" id="newsTitleEnInput" placeholder="將自動翻譯..." readonly style="background:#f9fafb;">
     </div>
     <div class="form-group">
       <label>English Content <span class="req">*</span></label>
-      <textarea id="newsContentEnInput" rows="3" placeholder="Detailed announcement..."></textarea>
+      <textarea id="newsContentEnInput" rows="3" placeholder="將自動翻譯..." readonly style="background:#f9fafb;"></textarea>
     </div>
+    <p style="font-size:0.8rem;color:#9ca3af;margin-top:-0.5rem;margin-bottom:1rem;">🌐 英文內容將在點擊「發佈」時自動翻譯</p>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeNewsModal()">取消</button>
       <button class="btn-save" id="newsSaveBtn" onclick="saveNews()">發佈</button>
@@ -2506,7 +2507,7 @@
 
   let editingNewsId = null
 
-  function openAddNews() { editingNewsId = null; document.getElementById('newsTitleInput').value = ''; document.getElementById('newsContentInput').value = ''; document.getElementById('newsTitleEnInput').value = ''; document.getElementById('newsContentEnInput').value = ''; document.getElementById('newsModalTitle').textContent = '新增公告'; document.getElementById('newsSaveBtn').textContent = '發佈'; document.getElementById('newsModal').style.display = 'flex' }
+  function openAddNews() { editingNewsId = null; document.getElementById('newsTitleInput').value = ''; document.getElementById('newsContentInput').value = ''; document.getElementById('newsTitleEnInput').value = ''; document.getElementById('newsContentEnInput').value = ''; document.getElementById('newsSaveBtn').textContent = '發佈'; document.getElementById('newsSaveBtn').disabled = false; document.getElementById('newsModalTitle').textContent = '新增公告'; document.getElementById('newsModal').style.display = 'flex' }
 
   function closeNewsModal() { document.getElementById('newsModal').style.display = 'none' }
 
@@ -2528,14 +2529,27 @@
   async function saveNews() {
     const title = document.getElementById('newsTitleInput').value.trim()
     const content = document.getElementById('newsContentInput').value.trim()
-    const title_en = document.getElementById('newsTitleEnInput').value.trim()
-    const content_en = document.getElementById('newsContentEnInput').value.trim()
-    if (!title || !content || !title_en || !content_en) { alert('請填寫所有中英文欄位'); return }
+    if (!title || !content) { alert('請填寫中文標題和內容'); return }
+    let title_en = document.getElementById('newsTitleEnInput').value.trim()
+    let content_en = document.getElementById('newsContentEnInput').value.trim()
+    const btn = document.getElementById('newsSaveBtn')
+    if (!title_en || !content_en) {
+      btn.textContent = '翻譯中...'; btn.disabled = true
+      try {
+        const [tr1, tr2] = await Promise.all([
+          fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(title) + '&langpair=zh-CN|en').then(r=>r.json()).then(d=>d.responseData.translatedText||title),
+          fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(content) + '&langpair=zh-CN|en').then(r=>r.json()).then(d=>d.responseData.translatedText||content)
+        ])
+        title_en = tr1; content_en = tr2
+        document.getElementById('newsTitleEnInput').value = title_en
+        document.getElementById('newsContentEnInput').value = content_en
+      } catch (e) { btn.textContent = '發佈'; btn.disabled = false; alert('翻譯失敗，請稍後重試'); return }
+    }
     try {
       const body = { title, content, title_en, content_en }
       await apiFetch(SUPABASE_URL + '/rest/v1/company_news', { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }, body: JSON.stringify(body) })
       closeNewsModal(); loadCompanyNews()
-    } catch (e) { console.error(e) }
+    } catch (e) { btn.textContent = '發佈'; btn.disabled = false; console.error(e) }
   }
 
   async function deleteNews(id) {
