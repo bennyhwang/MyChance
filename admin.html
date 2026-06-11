@@ -358,6 +358,7 @@
       <button class="tab-btn" onclick="switchTab('attendance');setTimeout(renderAttStudentList,50)">考勤管理</button>
       <button class="tab-btn" onclick="switchTab('resources')">教學資源</button>
       <button class="tab-btn" onclick="switchTab('companynews')">公司公告</button>
+      <button class="tab-btn" onclick="switchTab('coursevideos')">課程回看</button>
     </div>
 
     <!-- 咨詢記錄視圖 -->
@@ -711,6 +712,52 @@
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeNewsModal()">取消</button>
       <button class="btn-save" id="newsSaveBtn" onclick="saveNews()">發佈</button>
+    </div>
+  </div>
+</div>
+
+<!-- 課程回看視圖 -->
+<div id="coursevideosView" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+    <div>
+      <h1 style="font-size:1.8rem;margin-bottom:0.3rem;">課程回看</h1>
+      <p style="color:#6b7280;font-size:0.95rem;">管理所有課程錄影（YouTube / Bilibili）</p>
+    </div>
+    <div style="display:flex;gap:0.5rem;">
+      <button class="add-btn" onclick="openAddVideo()" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.65rem 1.2rem;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;font-size:0.9rem;cursor:pointer;">＋ 新增影片</button>
+    </div>
+  </div>
+  <div id="courseVideoList"></div>
+</div>
+
+<!-- 新增影片彈窗 -->
+<div class="modal-overlay" id="videoModal">
+  <div class="modal-box" style="max-width:550px;">
+    <h3 id="videoModalTitle">新增影片</h3>
+    <p class="modal-sub">填寫影片資訊</p>
+    <div class="form-group">
+      <label>影片標題 <span class="req">*</span></label>
+      <input type="text" id="videoTitleInput" placeholder="如：小學數學 - 分數加減法">
+    </div>
+    <div class="form-group">
+      <label>描述</label>
+      <textarea id="videoDescInput" rows="3" placeholder="簡要描述影片內容..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>所屬課程</label>
+      <input type="text" id="videoCourseInput" placeholder="如：小學數學精英班">
+    </div>
+    <div class="form-group">
+      <label>平台 <span class="req">*</span></label>
+      <select id="videoPlatformInput"><option value="youtube">YouTube</option><option value="bilibili">Bilibili</option></select>
+    </div>
+    <div class="form-group">
+      <label>影片 ID <span class="req">*</span></label>
+      <input type="text" id="videoIdInput" placeholder="YouTube 影片 ID 或 Bilibili BV 號">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeVideoModal()">取消</button>
+      <button class="btn-save" id="videoSaveBtn" onclick="saveVideo()">新增</button>
     </div>
   </div>
 </div>
@@ -1554,11 +1601,12 @@
   function switchTab(name) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
-    const tabs = { inquiries: 0, teachers: 1, students: 2, courses: 3, registrations: 4, accounts: 5, schedules: 6, attendance: 7, resources: 8, companynews: 9 }
+    const tabs = { inquiries: 0, teachers: 1, students: 2, courses: 3, registrations: 4, accounts: 5, schedules: 6, attendance: 7, resources: 8, companynews: 9, coursevideos: 10 }
     document.querySelectorAll('.tab-btn')[tabs[name]].classList.add('active')
     document.getElementById(name + 'View').classList.add('active')
     if (name === 'resources') loadResources()
     if (name === 'companynews') loadCompanyNews()
+    if (name === 'coursevideos') loadCourseVideos()
   }
 
   // ============ 咨詢記錄 ============
@@ -2558,6 +2606,48 @@
     try {
       await apiFetch(SUPABASE_URL + '/rest/v1/company_news?id=eq.' + id, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken } })
       loadCompanyNews()
+    } catch (e) { console.error(e) }
+  }
+
+  // ============ 課程回看 ============
+
+  function openAddVideo() { document.getElementById('videoTitleInput').value = ''; document.getElementById('videoDescInput').value = ''; document.getElementById('videoCourseInput').value = ''; document.getElementById('videoPlatformInput').value = 'youtube'; document.getElementById('videoIdInput').value = ''; document.getElementById('videoModal').style.display = 'flex' }
+
+  function closeVideoModal() { document.getElementById('videoModal').style.display = 'none' }
+
+  async function loadCourseVideos() {
+    try {
+      const res = await apiFetch(SUPABASE_URL + '/rest/v1/course_videos?order=created_at.desc', { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken } })
+      const data = await res.json()
+      const container = document.getElementById('courseVideoList')
+      if (!data.length) { container.innerHTML = '<div style="text-align:center;padding:3rem 1rem;color:#9ca3af;">暫無影片</div>'; return }
+      let html = '<div class="table-wrap"><table><thead><tr><th>標題</th><th>描述</th><th>課程</th><th>平台</th><th>影片 ID</th><th>操作</th></tr></thead><tbody>'
+      data.forEach(function(v) {
+        html += '<tr><td style="font-weight:600;">' + escHtml(v.title) + '</td><td style="color:#6b7280;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(v.description) + '</td><td>' + escHtml(v.course_name) + '</td><td>' + (v.platform === 'youtube' ? 'YouTube' : 'Bilibili') + '</td><td style="font-size:0.85rem;color:#9ca3af;">' + escHtml(v.video_id) + '</td><td><button onclick="deleteVideo(' + v.id + ')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;padding:0.2rem;" title="刪除">✕</button></td></tr>'
+      })
+      html += '</tbody></table></div>'
+      container.innerHTML = html
+    } catch (e) { console.error(e) }
+  }
+
+  async function saveVideo() {
+    const title = document.getElementById('videoTitleInput').value.trim()
+    const description = document.getElementById('videoDescInput').value.trim()
+    const course_name = document.getElementById('videoCourseInput').value.trim()
+    const platform = document.getElementById('videoPlatformInput').value
+    const video_id = document.getElementById('videoIdInput').value.trim()
+    if (!title || !video_id) { alert('請填寫標題和影片 ID'); return }
+    try {
+      await apiFetch(SUPABASE_URL + '/rest/v1/course_videos', { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }, body: JSON.stringify({ title, description, course_name, platform, video_id }) })
+      closeVideoModal(); loadCourseVideos()
+    } catch (e) { console.error(e) }
+  }
+
+  async function deleteVideo(id) {
+    if (!confirm('確定刪除此影片？')) return
+    try {
+      await apiFetch(SUPABASE_URL + '/rest/v1/course_videos?id=eq.' + id, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + accessToken } })
+      loadCourseVideos()
     } catch (e) { console.error(e) }
   }
 
