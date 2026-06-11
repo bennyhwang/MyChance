@@ -273,6 +273,14 @@
       .stats { grid-template-columns: 1fr; gap: 0.6rem; }
       .stat-item { padding: 0.8rem; }
     }
+
+    .news-marquee {
+      position: fixed; top: 73px; left: 0; right: 0; background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; padding: 0.5rem 1rem; z-index: 99; font-size: 0.9rem; overflow: hidden; white-space: nowrap; display: none;
+    }
+    .news-marquee.show { display: block; }
+    .news-marquee-inner { display: inline-block; animation: scrollMarquee 25s linear infinite; }
+    @keyframes scrollMarquee { 0%{transform:translateX(100vw)}100%{transform:translateX(-100%)} }
+    @media (max-width: 768px) { .news-marquee { top: 60px; font-size: 0.8rem; } }
   </style>
 </head>
 <body>
@@ -288,6 +296,8 @@
     <a href="en.html" style="font-weight:500;background:linear-gradient(135deg,#667eea,#f093fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">English</a>
   </div>
 </nav>
+
+<div class="news-marquee" id="newsMarquee"><span class="news-marquee-inner" id="newsMarqueeText"></span></div>
 
 <section class="hero">
   <div class="hero-content">
@@ -450,6 +460,10 @@
 <div class="footer">
   &copy; 2026 佳思教育. All Rights Reserved. 幫你實現夢想
 </div>
+
+<script>
+fetch('https://fuuwjceawowojecaqfru.supabase.co/rest/v1/company_news?select=title,content,created_at&created_at=gt.' + new Date(Date.now() - 7*24*60*60*1000).toISOString() + '&order=created_at.desc&limit=1', { headers: { 'apikey': 'sb_publishable_M3lmOrr1QDDkkKE3r9q7qQ_mVnLlYtQ' } }).then(function(r){return r.json()}).then(function(data){if(data.length){document.getElementById('newsMarqueeText').textContent='📢 '+data[0].title+' — '+data[0].content;document.getElementById('newsMarquee').classList.add('show')}}).catch(function(){})
+</script>
 
 </body>
 </html>
