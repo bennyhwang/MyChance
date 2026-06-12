@@ -375,3 +375,23 @@ ALTER TABLE parent_students ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "all_parent_students" ON parent_students FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "anon_select_parent_students" ON parent_students FOR SELECT TO anon USING (true);
+
+-- 家長帳號新增/修改時自動同步 parent_students
+CREATE OR REPLACE FUNCTION sync_parent_students()
+RETURNS TRIGGER SECURITY DEFINER AS $$
+BEGIN
+  IF TG_OP IN ('UPDATE', 'DELETE') THEN
+    DELETE FROM parent_students WHERE parent_username = OLD.username;
+  END IF;
+  IF TG_OP IN ('INSERT', 'UPDATE') AND NEW.role = 'parent' AND NEW.child_name IS NOT NULL THEN
+    INSERT INTO parent_students (parent_username, student_id)
+    SELECT NEW.username, s.id FROM students s WHERE s.name = NEW.child_name
+    ON CONFLICT (parent_username, student_id) DO NOTHING;
+  END IF;
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_sync_parent_students
+AFTER INSERT OR UPDATE OR DELETE ON accounts
+FOR EACH ROW EXECUTE FUNCTION sync_parent_students();
