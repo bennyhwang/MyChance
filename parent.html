@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="JnTlogo.jpg" type="image/jpeg">
+  <title>家長專區 - 佳思教育</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans SC', -apple-system, sans-serif; color: #1a1a2e; overflow-x: hidden; background: #f8f9ff; }
+
+    nav {
+      background: rgba(15,12,41,0.95); backdrop-filter: blur(20px); padding: 1rem 2rem;
+      display: flex; justify-content: space-between; align-items: center;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    nav .logo { display: flex; align-items: center; gap: 0.5rem; color: #fff; font-size: 1.4rem; font-weight: 900; text-decoration: none; }
+    .nav-logo { height: 36px; width: auto; border-radius: 6px; }
+    nav .nav-right { display: flex; align-items: center; gap: 1rem; }
+    nav .nav-right a, nav .nav-right button { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.85rem; padding: 0.4rem 1rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; transition: all 0.3s; cursor: pointer; background: none; font-family: inherit; }
+    nav .nav-right a:hover, nav .nav-right button:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+    .login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); padding: 1rem; }
+    .login-box { background: #fff; border-radius: 24px; padding: 2.5rem; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; }
+    .login-box h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .login-box p { color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .login-box .form-group { text-align: left; margin-bottom: 1rem; }
+    .login-box .form-group label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.3rem; color: #374151; }
+    .login-box .form-group input { width: 100%; padding: 0.7rem 1rem; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 0.95rem; font-family: inherit; outline: none; transition: border 0.3s; }
+    .login-box .form-group input:focus { border-color: #667eea; }
+    .login-btn { width: 100%; padding: 0.8rem; background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-family: inherit; cursor: pointer; transition: all 0.3s; }
+    .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102,126,234,0.4); }
+    .login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .login-error { color: #ef4444; font-size: 0.85rem; margin-top: 0.8rem; display: none; }
+
+    .page-content { padding: 6rem 2rem 3rem; max-width: 1200px; margin: 0 auto; display: none; }
+
+    .section-tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; background: #fff; padding: 0.5rem; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+    .section-tab { padding: 0.6rem 1.2rem; border: none; background: none; font-family: inherit; font-size: 0.9rem; color: #6b7280; cursor: pointer; border-radius: 10px; transition: all 0.3s; }
+    .section-tab:hover { background: #f3f4f6; }
+    .section-tab.active { background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+    .card { background: #fff; border-radius: 16px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: all 0.3s; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+    .card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .card p { color: #6b7280; font-size: 0.9rem; line-height: 1.6; }
+    .card .label { font-size: 0.8rem; color: #9ca3af; margin-top: 0.5rem; }
+    .card .tag { display: inline-block; background: #eef2ff; color: #667eea; font-size: 0.8rem; padding: 0.2rem 0.6rem; border-radius: 6px; margin-right: 0.3rem; margin-top: 0.3rem; }
+
+    .table-wrap { overflow-x: auto; background: #fff; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+    .table-wrap table { width: 100%; border-collapse: collapse; }
+    .table-wrap th { background: #f9fafb; text-align: left; padding: 0.8rem 1rem; font-size: 0.85rem; color: #6b7280; font-weight: 500; white-space: nowrap; }
+    .table-wrap td { padding: 0.8rem 1rem; font-size: 0.9rem; border-top: 1px solid #f3f4f6; }
+    .badge-present { color: #10b981; font-weight: 500; }
+    .badge-absent { color: #ef4444; font-weight: 500; }
+    .badge-paid { background: #d1fae5; color: #065f46; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.8rem; }
+    .badge-unpaid { background: #fee2e2; color: #991b1b; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.8rem; }
+
+    .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 1.5rem; }
+    .video-card { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: all 0.3s; }
+    .video-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+    .video-wrapper { position: relative; width: 100%; padding-top: 56.25%; background: #000; }
+    .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+    .video-info { padding: 1rem 1.2rem; }
+    .video-info h3 { font-size: 1rem; margin-bottom: 0.3rem; }
+    .video-info .meta { color: #9ca3af; font-size: 0.8rem; }
+    .platform-badge { font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; color: #fff; }
+    .platform-youtube { background: #ff0000; }
+    .platform-bilibili { background: #00a1d6; }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; color: #9ca3af; }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+    .student-selector { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .student-selector button { padding: 0.4rem 1rem; border: 1px solid #e5e7eb; background: #fff; border-radius: 8px; font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: all 0.3s; }
+    .student-selector button.active { background: #667eea; color: #fff; border-color: #667eea; }
+
+    @media (max-width: 768px) {
+      .page-content { padding: 5rem 1rem 2rem; }
+      .card-grid { grid-template-columns: 1fr; }
+      .video-grid { grid-template-columns: 1fr; }
+      .section-tabs { gap: 0.3rem; }
+      .section-tab { font-size: 0.8rem; padding: 0.4rem 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="index.html"><img src="JnTlogo.jpg" alt="佳思教育" class="nav-logo"> 佳思教育</a>
+  <div class="nav-right">
+    <a href="index.html">返回首頁</a>
+    <button id="logoutLink" style="display:none;" onclick="logout()">登出</button>
+  </div>
+</nav>
+
+<div class="login-page" id="loginPage">
+  <div class="login-box">
+    <h2>家長專區</h2>
+    <p>請使用家長帳號登入</p>
+    <div class="form-group"><label>用戶名</label><input type="text" id="loginUsername" placeholder="請輸入用戶名"></div>
+    <div class="form-group"><label>密碼</label><input type="password" id="loginPassword" placeholder="請輸入密碼"></div>
+    <button class="login-btn" id="loginBtn" onclick="login()">登錄</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<div class="page-content" id="appContent">
+  <div class="section-tabs">
+    <button class="section-tab active" onclick="switchSection('courses')">📚 課程介紹</button>
+    <button class="section-tab" onclick="switchSection('teachers')">👨‍🏫 老師介紹</button>
+    <button class="section-tab" onclick="switchSection('review')">📺 課程回看</button>
+    <button class="section-tab" onclick="switchSection('attendance')">✅ 小孩考勤</button>
+    <button class="section-tab" onclick="switchSection('registrations')">📋 報名繳費</button>
+  </div>
+
+  <div id="secCourses" class="section active"><div class="empty-state"><div class="icon">📚</div><div>載入中...</div></div></div>
+  <div id="secTeachers" class="section"><div class="empty-state"><div class="icon">👨‍🏫</div><div>載入中...</div></div></div>
+  <div id="secReview" class="section"><div class="empty-state"><div class="icon">📺</div><div>載入中...</div></div></div>
+  <div id="secAttendance" class="section"><div class="empty-state"><div class="icon">✅</div><div>載入中...</div></div></div>
+  <div id="secRegistrations" class="section"><div class="empty-state"><div class="icon">📋</div><div>載入中...</div></div></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://fuuwjceawowojecaqfru.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_M3lmOrr1QDDkkKE3r9q7qQ_mVnLlYtQ'
+const HEADERS = { 'apikey': SUPABASE_KEY }
+
+let currentUsername = null
+let currentDisplayName = null
+let currentStudents = []
+let allVideos = []
+
+function api(path) { return SUPABASE_URL + '/rest/v1/' + path }
+
+async function login() {
+  const username = document.getElementById('loginUsername').value.trim()
+  const password = document.getElementById('loginPassword').value
+  const btn = document.getElementById('loginBtn')
+  const errEl = document.getElementById('loginError')
+  errEl.style.display = 'none'
+  if (!username || !password) { errEl.textContent = '請輸入用戶名和密碼'; errEl.style.display = 'block'; return }
+  btn.disabled = true; btn.textContent = '登錄中...'
+  try {
+    const res = await fetch(api('rpc/login_account'), { method: 'POST', headers: HEADERS, body: JSON.stringify({ p_username: username, p_password: password }) })
+    if (!res.ok) throw new Error('HTTP ' + res.status)
+    const result = await res.json()
+    if (!result || result.length === 0) { errEl.textContent = '用戶名或密碼錯誤'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = '登錄'; return }
+    const acct = result[0]
+    if (acct.role !== 'parent') { errEl.textContent = '此帳號並非家長帳號'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = '登錄'; return }
+    currentUsername = acct.username
+    currentDisplayName = acct.display_name || acct.username
+    localStorage.setItem('parent_session', JSON.stringify({ username: currentUsername, display_name: currentDisplayName }))
+    showApp()
+  } catch (err) { errEl.textContent = '登錄失敗：' + err.message; errEl.style.display = 'block' }
+  btn.disabled = false; btn.textContent = '登錄'
+}
+
+function showApp() {
+  document.getElementById('loginPage').style.display = 'none'
+  document.getElementById('appContent').style.display = 'block'
+  document.getElementById('logoutLink').style.display = 'inline'
+  loadAll()
+}
+
+function logout() {
+  localStorage.removeItem('parent_session')
+  currentUsername = null
+  document.getElementById('loginPage').style.display = 'flex'
+  document.getElementById('appContent').style.display = 'none'
+  document.getElementById('logoutLink').style.display = 'none'
+}
+
+function switchSection(name) {
+  document.querySelectorAll('.section-tab').forEach(function(b) { b.classList.toggle('active', b.textContent.trim().includes(name === 'courses' ? '課程介紹' : name === 'teachers' ? '老師介紹' : name === 'review' ? '課程回看' : name === 'attendance' ? '小孩考勤' : '報名繳費')) })
+  document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active') })
+  document.getElementById('sec' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active')
+}
+
+function escHtml(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+
+// ============ 載入全部 ============
+
+async function loadAll() {
+  await Promise.all([loadCourses(), loadTeachers(), loadVideos(), loadParentStudents()])
+}
+
+// ============ 課程介紹 ============
+
+async function loadCourses() {
+  try {
+    const res = await fetch(api('courses?order=course_name.asc'), { headers: HEADERS })
+    const data = await res.json()
+    const el = document.getElementById('secCourses')
+    if (!data.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📚</div><div>暫無課程</div></div>'; return }
+    el.innerHTML = '<div class="card-grid">' + data.map(function(c) {
+      return '<div class="card"><h3>' + escHtml(c.course_name) + '</h3>' + (c.description ? '<p>' + escHtml(c.description) + '</p>' : '') + (c.teacher ? '<div class="label">👨‍🏫 ' + escHtml(c.teacher) + '</div>' : '') + (c.sessions ? '<div class="label">📅 ' + c.sessions + ' 堂</div>' : '') + (c.fee ? '<div class="label">💰 ' + escHtml(c.fee) + '</div>' : '') + '</div>'
+    }).join('') + '</div>'
+  } catch(e) { document.getElementById('secCourses').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div>載入失敗</div></div>' }
+}
+
+// ============ 老師介紹 ============
+
+async function loadTeachers() {
+  try {
+    const res = await fetch(api('teachers?order=name.asc'), { headers: HEADERS })
+    const data = await res.json()
+    const el = document.getElementById('secTeachers')
+    if (!data.length) { el.innerHTML = '<div class="empty-state"><div class="icon">👨‍🏫</div><div>暫無老師</div></div>'; return }
+    el.innerHTML = '<div class="card-grid">' + data.map(function(t) {
+      return '<div class="card"><h3>' + escHtml(t.name) + (t.english_name ? ' (' + escHtml(t.english_name) + ')' : '') + '</h3>' + (t.subject ? '<div class="tag">' + escHtml(t.subject) + '</div>' : '') + (t.qualification ? '<p>' + escHtml(t.qualification) + '</p>' : '') + (t.specialty ? '<p style="margin-top:0.3rem;">⭐ ' + escHtml(t.specialty) + '</p>' : '') + '</div>'
+    }).join('') + '</div>'
+  } catch(e) { document.getElementById('secTeachers').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div>載入失敗</div></div>' }
+}
+
+// ============ 課程回看 ============
+
+async function loadVideos() {
+  try {
+    const res = await fetch(api('course_videos?order=created_at.desc'), { headers: HEADERS })
+    allVideos = await res.json()
+    renderVideos()
+  } catch(e) { document.getElementById('secReview').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div>載入失敗</div></div>' }
+}
+
+function renderVideos() {
+  const el = document.getElementById('secReview')
+  if (!allVideos.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📺</div><div>暫無影片</div></div>'; return }
+  el.innerHTML = '<div class="video-grid">' + allVideos.map(function(v) {
+    var src = v.platform === 'youtube' ? 'https://www.youtube.com/embed/' + v.video_id : 'https://player.bilibili.com/player.html?bvid=' + v.video_id
+    var platLabel = v.platform === 'youtube' ? 'YouTube' : 'Bilibili'
+    var platClass = v.platform === 'youtube' ? 'platform-youtube' : 'platform-bilibili'
+    return '<div class="video-card"><div class="video-wrapper"><iframe src="' + src + '" allowfullscreen loading="lazy"></iframe></div><div class="video-info"><h3>' + escHtml(v.title) + '</h3>' + (v.description ? '<p style="color:#6b7280;font-size:0.85rem;line-height:1.5;">' + escHtml(v.description) + '</p>' : '') + '<div class="meta" style="margin-top:0.5rem;"><span class="platform-badge ' + platClass + '">' + platLabel + '</span>' + (v.course_name ? '<span style="margin-left:0.5rem;color:#9ca3af;">' + escHtml(v.course_name) + '</span>' : '') + '</div></div></div>'
+  }).join('') + '</div>'
+}
+
+// ============ 小孩考勤與報名繳費（共用 parent_students） ============
+
+async function loadParentStudents() {
+  try {
+    const res = await fetch(api('parent_students?select=student_id&parent_username=eq.' + encodeURIComponent(currentUsername)), { headers: HEADERS })
+    const links = await res.json()
+    if (!links.length) {
+      document.getElementById('secAttendance').innerHTML = '<div class="empty-state"><div class="icon">✅</div><div>尚未關聯小孩，請聯繫管理員</div></div>'
+      document.getElementById('secRegistrations').innerHTML = '<div class="empty-state"><div class="icon">📋</div><div>尚未關聯小孩，請聯繫管理員</div></div>'
+      return
+    }
+    const ids = links.map(function(l) { return l.student_id }).join(',')
+    const sRes = await fetch(api('students?select=id,name,course&id=in.(' + ids + ')&order=name.asc'), { headers: HEADERS })
+    currentStudents = await sRes.json()
+    if (!currentStudents.length) {
+      document.getElementById('secAttendance').innerHTML = '<div class="empty-state"><div class="icon">✅</div><div>找不到學生資料</div></div>'
+      document.getElementById('secRegistrations').innerHTML = '<div class="empty-state"><div class="icon">📋</div><div>找不到學生資料</div></div>'
+      return
+    }
+    loadAttendance(currentStudents[0].name)
+    loadRegistrations(currentStudents[0].name)
+    renderStudentTabs()
+  } catch(e) {
+    document.getElementById('secAttendance').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div>載入失敗</div></div>'
+    document.getElementById('secRegistrations').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div>載入失敗</div></div>'
+  }
+}
+
+function renderStudentTabs() {
+  var html = '<div class="student-selector">'
+  currentStudents.forEach(function(s, i) {
+    html += '<button class="' + (i === 0 ? 'active' : '') + '" onclick="switchStudent(' + s.id + ',this)">' + escHtml(s.name) + '</button>'
+  })
+  html += '</div>'
+  document.getElementById('secAttendance').innerHTML = html + '<div id="attendanceData"><div class="empty-state"><div class="icon">✅</div><div>載入中...</div></div></div>'
+  document.getElementById('secRegistrations').innerHTML = html + '<div id="registrationsData"><div class="empty-state"><div class="icon">📋</div><div>載入中...</div></div></div>'
+}
+
+var currentAttStudentId = null
+var currentRegStudentId = null
+
+function switchStudent(id, btn) {
+  document.querySelectorAll('.student-selector button').forEach(function(b) { b.classList.remove('active') })
+  btn.classList.add('active')
+  var s = currentStudents.find(function(s) { return s.id === id })
+  if (!s) return
+  loadAttendance(s.name)
+  loadRegistrations(s.name)
+}
+
+// ============ 考勤 ============
+
+async function loadAttendance(studentName) {
+  try {
+    const res = await fetch(api('attendance?select=course_name,session_number,start_time,attended&student_name=eq.' + encodeURIComponent(studentName) + '&order=start_time.desc'), { headers: HEADERS })
+    const data = await res.json()
+    var el = document.getElementById('attendanceData')
+    if (!data.length) { el.innerHTML = '<div class="empty-state"><div class="icon">✅</div><div>暫無考勤記錄</div></div>'; return }
+    var html = '<div class="table-wrap"><table><thead><tr><th>課程</th><th>節數</th><th>上課時間</th><th>出席</th></tr></thead><tbody>'
+    data.forEach(function(a) {
+      var attendedHtml = a.attended ? '<span class="badge-present">✓ 出席</span>' : '<span class="badge-absent">✗ 缺席</span>'
+      var time = a.start_time ? new Date(a.start_time).toLocaleString('zh-HK') : '-'
+      html += '<tr><td>' + escHtml(a.course_name) + '</td><td>第 ' + a.session_number + ' 堂</td><td style="white-space:nowrap;">' + time + '</td><td>' + attendedHtml + '</td></tr>'
+    })
+    html += '</tbody></table></div>'
+    el.innerHTML = html
+  } catch(e) { document.getElementById('attendanceData').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div>載入失敗</div></div>' }
+}
+
+// ============ 報名繳費 ============
+
+async function loadRegistrations(studentName) {
+  try {
+    const res = await fetch(api('registrations?select=course_name,fee,payment_ref,materials_delivered,created_at&student_name=eq.' + encodeURIComponent(studentName) + '&order=created_at.desc'), { headers: HEADERS })
+    const data = await res.json()
+    var el = document.getElementById('registrationsData')
+    if (!data.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📋</div><div>暫無報名記錄</div></div>'; return }
+    var html = '<div class="table-wrap"><table><thead><tr><th>課程</th><th>費用</th><th>繳費狀態</th><th>付款編號</th><th>報名時間</th></tr></thead><tbody>'
+    data.forEach(function(r) {
+      var paidHtml = r.payment_ref ? '<span class="badge-paid">已繳費</span>' : '<span class="badge-unpaid">未繳費</span>'
+      html += '<tr><td>' + escHtml(r.course_name) + '</td><td>' + escHtml(r.fee || '-') + '</td><td>' + paidHtml + '</td><td>' + escHtml(r.payment_ref || '-') + '</td><td style="white-space:nowrap;font-size:0.85rem;">' + new Date(r.created_at).toLocaleString('zh-HK') + '</td></tr>'
+    })
+    html += '</tbody></table></div>'
+    el.innerHTML = html
+  } catch(e) { document.getElementById('registrationsData').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div>載入失敗</div></div>' }
+}
+
+// ============ Session restore ============
+
+;(function() {
+  var s = localStorage.getItem('parent_session')
+  if (s) { try { var d = JSON.parse(s); currentUsername = d.username; currentDisplayName = d.display_name; showApp() } catch(_) { localStorage.removeItem('parent_session') } }
+})()
+</script>
+
+</body>
+</html>
