@@ -1,6 +1,13 @@
 {
   "items": [
     {
+      "title": "教育局公布《中小学数字教育发展蓝图》（附图）",
+      "link": "/www.info.gov.hk/gia/general/202606/17/P2026061700338.htm?fontSize=2",
+      "description": "新闻公报",
+      "pubDate": "2026/06/17 00:00:00",
+      "source": "教育局新聞公報"
+    },
+    {
       "title": "「家长智Net」最新推介：(影片)「玩乐充电站—为孩子成长与亲子关系充充电」家长讲座 - 游戏如何为孩子充电",
       "link": "https://www.edb.gov.hk/sc/student-parents/parents-related/ebulletin-for-parents/2025-2026/20260612.html",
       "description": "家长电子专递",
@@ -274,5 +281,5 @@
       "source": "教育局常任秘書長演辭"
     }
   ],
-  "updated": "2026-06-17T04:59:45.091Z"
+  "updated": "2026-06-17T11:10:50.375Z"
 }
