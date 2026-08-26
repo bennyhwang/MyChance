@@ -1,6 +1,20 @@
 {
   "items": [
     {
+      "title": "开学日应留意天气及交通最新资讯",
+      "link": "https://www.edb.gov.hk/sc/student-parents/parents-related/ebulletin-for-parents/2025-2026/20260826.html",
+      "description": "家长电子专递",
+      "pubDate": "2026/08/26 00:00:00",
+      "source": "教育局最新消息"
+    },
+    {
+      "title": "61名学生获颁香港卓越奖学金（附图）",
+      "link": "/www.info.gov.hk/gia/general/202608/26/P2026082600436.htm",
+      "description": "新闻公报",
+      "pubDate": "2026/08/26 00:00:00",
+      "source": "教育局新聞公報"
+    },
+    {
       "title": "教育局举办「人工智能领导」培训　策动校本数字教育发展（附图）",
       "link": "/www.info.gov.hk/gia/general/202608/25/P2026082500264.htm",
       "description": "新闻公报",
@@ -246,5 +260,5 @@
       "source": "教育局常任秘書長演辭"
     }
   ],
-  "updated": "2026-08-26T06:59:55.515Z"
+  "updated": "2026-08-26T13:05:41.681Z"
 }
