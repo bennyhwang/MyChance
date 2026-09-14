@@ -1,6 +1,13 @@
 {
   "items": [
     {
+      "title": "递交小一入学申请表须知",
+      "link": "https://www.edb.gov.hk/sc/student-parents/parents-related/ebulletin-for-parents/2026-2027/20260914.html",
+      "description": "家长电子专递",
+      "pubDate": "2026/09/14 00:00:00",
+      "source": "教育局最新消息"
+    },
+    {
       "title": "教育局提醒家长递交小一入学申请表",
       "link": "/www.info.gov.hk/gia/general/202609/14/P2026091400192.htm",
       "description": "新闻公报",
@@ -211,5 +218,5 @@
       "source": "教育局常任秘書長演辭"
     }
   ],
-  "updated": "2026-09-14T04:36:48.566Z"
+  "updated": "2026-09-14T12:30:02.742Z"
 }
