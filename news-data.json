@@ -1,8 +1,22 @@
 {
   "items": [
     {
+      "title": "「家长智Net」最新推介：亲子密码 -家中的模范生",
+      "link": "https://www.edb.gov.hk/sc/student-parents/parents-related/ebulletin-for-parents/2026-2027/20260918.html",
+      "description": "家长电子专递",
+      "pubDate": "2026/09/18 00:00:00",
+      "source": "教育局最新消息"
+    },
+    {
       "title": "教育局局长出席「向国旗敬礼」港澳青少年升旗队代表访京团出发仪式致辞（只有中文）（附图）",
       "link": "/www.info.gov.hk/gia/general/202609/18/P2026091800275.htm?fontSize=2",
+      "description": "新闻公报",
+      "pubDate": "2026/09/18 00:00:00",
+      "source": "教育局新聞公報"
+    },
+    {
+      "title": "「向国旗敬礼」港澳青少年升旗队代表访京团出发",
+      "link": "/www.info.gov.hk/gia/general/202609/18/P2026091800368.htm",
       "description": "新闻公报",
       "pubDate": "2026/09/18 00:00:00",
       "source": "教育局新聞公報"
@@ -239,5 +253,5 @@
       "source": "教育局常任秘書長演辭"
     }
   ],
-  "updated": "2026-09-18T04:23:01.830Z"
+  "updated": "2026-09-18T11:01:09.051Z"
 }
