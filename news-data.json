@@ -1,6 +1,13 @@
 {
   "items": [
     {
+      "title": "教育局局长出席立法会教育事务委员会政策简报会就《香港第一个五年规划》及二○二六年《施政报告》开场发言（只有中文）",
+      "link": "/www.info.gov.hk/gia/general/202610/02/P2026100200378.htm",
+      "description": "教育局局长出席立法会教育事务委员会政策简报会就《香港第一个五年规划》及二○二六年《施政报告》开场发言（只有中文）",
+      "pubDate": "2026/10/02 00:00:00",
+      "source": "教育局最新消息"
+    },
+    {
       "title": "香港五所大学续居世界百强 助力巩固国际教育枢纽地位",
       "link": "/www.info.gov.hk/gia/general/202609/30/P2026093000156.htm",
       "description": "新闻公报",
@@ -190,13 +197,6 @@
       "source": "教育局新聞公報"
     },
     {
-      "title": "教育局提醒家长及学生留意开学日天气及交通最新资讯",
-      "link": "https://www.edb.gov.hk/sc/student-parents/parents-related/ebulletin-for-parents/2025-2026/20260831.html",
-      "description": "家长电子专递",
-      "pubDate": "2026/08/31 00:00:00",
-      "source": "教育局最新消息"
-    },
-    {
       "title": "教育局委任家校会主席及成员",
       "link": "/www.info.gov.hk/gia/general/202608/31/P2026083100216.htm",
       "description": "新闻公报",
@@ -218,13 +218,6 @@
       "source": "教育局新聞公報"
     },
     {
-      "title": "2027/28学年申请幼稚园入学注册证; 「家长智Net」最新推介：(影片) 小一适应✦建立家庭时间表; 递交小一入学申请表须知",
-      "link": "https://www.edb.gov.hk/sc/student-parents/parents-related/ebulletin-for-parents/2025-2026/20260828.html",
-      "description": "家长电子专递",
-      "pubDate": "2026/08/28 00:00:00",
-      "source": "教育局最新消息"
-    },
-    {
       "title": "政府委任香港考试及评核局委员会委员",
       "link": "/www.info.gov.hk/gia/general/202608/28/P2026082800200.htm",
       "description": "新闻公报",
@@ -237,13 +230,6 @@
       "description": "新闻公报",
       "pubDate": "2026/08/28 00:00:00",
       "source": "教育局新聞公報"
-    },
-    {
-      "title": "开学日应留意天气及交通最新资讯",
-      "link": "https://www.edb.gov.hk/sc/student-parents/parents-related/ebulletin-for-parents/2025-2026/20260826.html",
-      "description": "家长电子专递",
-      "pubDate": "2026/08/26 00:00:00",
-      "source": "教育局最新消息"
     },
     {
       "title": "61名学生获颁香港卓越奖学金（附图）",
@@ -260,46 +246,11 @@
       "source": "教育局新聞公報"
     },
     {
-      "title": "「家长智Net」最新推介：从掌握到创新：培养AI时代的资优领袖",
-      "link": "https://www.edb.gov.hk/sc/student-parents/parents-related/ebulletin-for-parents/2025-2026/20260821.html",
-      "description": "家长电子专递",
-      "pubDate": "2026/08/21 00:00:00",
-      "source": "教育局最新消息"
-    },
-    {
-      "title": "卫生署辖下学生健康服务及学童牙科保健服务将于二零二六年九月一日至十四日接受「网上报名」，请鼓励学生参加。",
-      "link": "https://www.schooldental.gov.hk/wsmile/sc/welcome",
-      "description": "2026/27 学年学生健康服务及学童牙科保健",
-      "pubDate": "2026/08/21 00:00:00",
-      "source": "教育局最新消息"
-    },
-    {
       "title": "香港学生扬威第三十八届国际电脑奥林匹克竞赛（附图）",
       "link": "/www.info.gov.hk/gia/general/202608/19/P2026081900285.htm",
       "description": "新闻公报",
       "pubDate": "2026/08/19 00:00:00",
       "source": "教育局新聞公報"
-    },
-    {
-      "title": "「家长智Net」最新推介：(影片) 活动精华 -【童心．同心】小学家长讲座系列（四）：「抗逆力与情绪」",
-      "link": "https://www.edb.gov.hk/sc/student-parents/parents-related/ebulletin-for-parents/2025-2026/20260814.html",
-      "description": "家长电子专递",
-      "pubDate": "2026/08/14 00:00:00",
-      "source": "教育局最新消息"
-    },
-    {
-      "title": "「家长智Net」最新推介：(影片) 小一适应✦家长的身份转变",
-      "link": "https://www.parent.edu.hk/zh-cn/smart-parent-net/topics/article/video-rolechange",
-      "description": "家长智Net",
-      "pubDate": "2026/08/07 00:00:00",
-      "source": "教育局最新消息"
-    },
-    {
-      "title": "「小一选校」家长讲座现正接受报名",
-      "link": "https://www.edb.gov.hk/sc/student-parents/parents-related/ebulletin-for-parents/2025-2026/20260807.html",
-      "description": "家长电子专递",
-      "pubDate": "2026/08/07 00:00:00",
-      "source": "教育局最新消息"
     },
     {
       "title": "「香港学生科学比赛2026」颁奖典礼致辞全文",
@@ -344,5 +295,5 @@
       "source": "教育局常任秘書長演辭"
     }
   ],
-  "updated": "2026-10-02T05:18:29.275Z"
+  "updated": "2026-10-02T12:19:42.294Z"
 }
